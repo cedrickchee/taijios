@@ -1,13 +1,18 @@
 # Tiny OS
 
-## Usage
+This repository contains the source code for the [A Freestanding Rust Binary][post] post of the [Writing an OS in Rust](https://os.phil-opp.com) series.
 
-To build this binary, we need to compile for a bare metal target such as
-`thumbv7em-none-eabihf`:
+[post]: https://os.phil-opp.com/freestanding-rust-binary/
+
+## Building
+
+To build this project, run:
 
 ```sh
 $ cargo build --target thumbv7em-none-eabihf
 ```
+
+This compile for a bare metal target such as `thumbv7em-none-eabihf`.
 
 ### Linker Errors
 
