@@ -52,6 +52,41 @@ $ cargo build --target x86_64-tiny_os.json
 
 This compile for our custom target (bare metal).
 
+**Memory-Related Intrinsics**
+
+The Rust compiler assumes that a certain set of built-in functions is available
+for all systems. Most of these functions are provided by the `compiler_builtins`
+crate that we just recompiled. However, there are some memory-related functions
+in that crate that are not enabled by default because they are normally provided
+by the C library on the system. These functions include `memset`, `memcpy`, and
+`memcmp`.
+
+Since we can’t link to the C library of the operating system, we need an
+alternative way to provide these functions to the compiler.
+
+Fortunately, the `compiler_builtins` crate already contains implementations for
+all the needed functions, they are just disabled by default to not collide with
+the implementations from the C library. We can enable them by setting cargo’s
+[build-std-features]
+(https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-std-features)
+flag to `["compiler-builtins-mem"]`. This can be configured in the `unstable`
+table in the `.cargo/config.toml` file.
+
+```toml
+...
+
+[unstable]
+build-std-features = ["compiler-builtins-mem"]
+build-std = ["core", "compiler_builtins"]
+```
+
+(Support for the `compiler-builtins-mem` feature was only [added very recently]
+(https://github.com/rust-lang/rust/pull/77284), so you need at least Rust
+nightly 2020-09-30 for it.)
+
+With this change, our kernel has valid implementations for all compiler-required
+functions, so it will continue to compile even if our code gets more complex.
+
 ### Linker Errors
 
 The linker is a program that combines the generated code into an executable.
