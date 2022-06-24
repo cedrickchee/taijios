@@ -11,10 +11,10 @@ This repository contains the source code for the [A Freestanding Rust Binary][po
 To build this project, run:
 
 ```sh
-$ cargo build --target thumbv7em-none-eabihf
+$ cargo build --target x86_64-tiny_os.json
 ```
 
-This compile for a bare metal target such as `thumbv7em-none-eabihf`.
+This compile for a bare metal target such as `x86_64-tiny_os`.
 
 ### Linker Errors
 
