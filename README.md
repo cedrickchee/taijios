@@ -1,5 +1,7 @@
 # Tiny OS
 
+A tiny OS develop in Rust for learning systems programming and OSdev.
+
 This repository contains the source code for the [A Freestanding Rust Binary][post] post of the [Writing an OS in Rust](https://os.phil-opp.com) series.
 
 [post]: https://os.phil-opp.com/freestanding-rust-binary/
