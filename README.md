@@ -1,5 +1,14 @@
 # Tiny OS
 
+## Usage
+
+To build this binary, we need to compile for a bare metal target such as
+`thumbv7em-none-eabihf`:
+
+```sh
+$ cargo build --target thumbv7em-none-eabihf
+```
+
 ### Linker Errors
 
 The linker is a program that combines the generated code into an executable.
