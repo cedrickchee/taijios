@@ -15,6 +15,7 @@ features. At least nightly _2020-07-15_ is required for building. You might need
 to run `rustup update nightly --force` to update to the latest nightly even if
 some components such as `rustfmt` are missing it.
 
+
 **The [`build-std` feature][cargo-build-std] of Cargo**
 
 Building the kernel for our new target will fail if we don't use the feature. To
@@ -31,26 +32,6 @@ build-std = ["core", "compiler_builtins"]
 [cargo-build-std]: https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#build-std
 [cargo-config]: https://doc.rust-lang.org/cargo/reference/config.html
 
-
-Then, to build this project, run:
-
-```sh
-$ cargo build --target x86_64-tiny_os.json
-  Downloaded getopts v0.2.21
-  ...
-  Downloaded libc v0.2.126
-  Downloaded compiler_builtins v0.1.73
-  Downloaded cc v1.0.69
-  ...
-  Downloaded 14 crates (2.1 MB) in 1.36s
-   Compiling core v0.0.0 (~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core)
-   Compiling compiler_builtins v0.1.73
-   Compiling rustc-std-workspace-core v1.99.0 (~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-core)
-   Compiling tiny-os v0.1.0 (~/repo/github/tiny-os)
-    Finished dev [unoptimized + debuginfo] target(s) in 11.90s
-```
-
-This compile for our custom target (bare metal).
 
 **Memory-Related Intrinsics**
 
@@ -86,6 +67,27 @@ nightly 2020-09-30 for it.)
 
 With this change, our kernel has valid implementations for all compiler-required
 functions, so it will continue to compile even if our code gets more complex.
+
+
+**We are now able to build our kernel for a bare metal target!**
+
+To build this project, run:
+
+```sh
+$ cargo build --target x86_64-tiny_os.json
+  Downloaded getopts v0.2.21
+  ...
+  Downloaded libc v0.2.126
+  Downloaded compiler_builtins v0.1.73
+  Downloaded cc v1.0.69
+  ...
+  Downloaded 14 crates (2.1 MB) in 1.36s
+   Compiling core v0.0.0 (~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core)
+   Compiling compiler_builtins v0.1.73
+   Compiling rustc-std-workspace-core v1.99.0 (~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-core)
+   Compiling tiny-os v0.1.0 (~/repo/github/tiny-os)
+    Finished dev [unoptimized + debuginfo] target(s) in 11.90s
+```
 
 ### Linker Errors
 
