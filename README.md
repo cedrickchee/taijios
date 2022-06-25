@@ -1,10 +1,73 @@
-# Tiny OS
+<div align="center">
 
-A tiny OS develop in Rust for learning systems programming and OSdev.
+  <img src="https://raw.githubusercontent.com/Louis3797/awesome-readme-template/main/assets/logo.png" alt="screenshot" width="200" height="auto" />
+  <h1>Tiny OS</h1>
+  
+  <p>
+    A tiny OS develop in Rust for learning systems programming and OSdev.
+  </p>
+  
+  
+<!-- Badges -->
+<p>
+  <a href="https://github.com/cedrickchee/tiny-os/graphs/contributors">
+    <img src="https://img.shields.io/github/contributors/cedrickchee/tiny-os" alt="contributors" />
+  </a>
+  <a href="">
+    <img src="https://img.shields.io/github/last-commit/cedrickchee/tiny-os" alt="last update" />
+  </a>
+  <a href="https://github.com/cedrickchee/tiny-os/network/members">
+    <img src="https://img.shields.io/github/forks/cedrickchee/tiny-os" alt="forks" />
+  </a>
+  <a href="https://github.com/cedrickchee/tiny-os/stargazers">
+    <img src="https://img.shields.io/github/stars/cedrickchee/tiny-os" alt="stars" />
+  </a>
+  <a href="https://github.com/cedrickchee/tiny-os/issues/">
+    <img src="https://img.shields.io/github/issues/cedrickchee/tiny-os" alt="open issues" />
+  </a>
+  <a href="https://github.com/cedrickchee/tiny-os/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/cedrickchee/tiny-os.svg" alt="license" />
+  </a>
+</p>
+   
+<h4>
+    <a href="https://github.com/cedrickchee/tiny-os/">View Demo</a>
+  <span> · </span>
+    <a href="https://github.com/cedrickchee/tiny-os">Documentation</a>
+  <span> · </span>
+    <a href="https://github.com/cedrickchee/tiny-os/issues/">Report Bug</a>
+  <span> · </span>
+    <a href="https://github.com/cedrickchee/tiny-os/issues/">Request Feature</a>
+  </h4>
+</div>
+
+<br />
+
+<!-- Table of Contents -->
+# Table of Contents
+
+- [About the Project](#about-the-project)
+  * [Screenshots](#screenshots)
+  * [Features](#features)
+- [Building](#building)
+- [Creating a Bootimage](#creating-a-bootimage)
+- [Running](#running)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+
+<!-- About the Project -->
+## About the Project
 
 This repository contains the source code for the [A Freestanding Rust Binary][post] post of the [Writing an OS in Rust](https://os.phil-opp.com) series.
 
 [post]: https://os.phil-opp.com/freestanding-rust-binary/
+
+<!-- Screenshots -->
+### Screenshots
+
+<div align="center">
+  <img src="docs/assets/qemu-boot-screen.png" width="600" height="auto" alt="screenshot" />
+</div>
 
 ## Building
 
