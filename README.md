@@ -68,13 +68,30 @@ nightly 2020-09-30 for it.)
 With this change, our kernel has valid implementations for all compiler-required
 functions, so it will continue to compile even if our code gets more complex.
 
+**Set a Default Target**
+
+To avoid passing the `--target` parameter on every invocation of `cargo build`,
+we can override the default target. To do this, we add the following to our
+cargo configuration file at `.cargo/config.toml`:
+
+```toml
+...
+
+[build]
+target = "x86_64-tiny_os.json"
+```
+
+This tells cargo to use our `x86_64-tiny_os.json` target when no explicit
+`--target` argument is passed. This means that we can now build our kernel with
+a simple `cargo build`.
+
 
 **We are now able to build our kernel for a bare metal target!**
 
 To build this project, run:
 
 ```sh
-$ cargo build --target x86_64-tiny_os.json
+$ cargo build
   Downloaded getopts v0.2.21
   ...
   Downloaded libc v0.2.126
