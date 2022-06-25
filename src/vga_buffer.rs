@@ -8,12 +8,34 @@ use spin::Mutex;
 //
 
 lazy_static! {
-    // Use the spinning Mutex to add safe interior mutability to our static
-    // WRITER
+    // Create a new Writer that points to the VGA buffer at
+    // memory address 0xb8000.
+
+    // Note: use the spinning Mutex to add safe interior mutability to our
+    // static WRITER
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
         color_code: ColorCode::new(Color::Yellow, Color::Black),
+        // syntax: cast the integer 0xb8000 as an mutable [raw
+        // pointer](https://doc.rust-lang.org/book/ch19-01-unsafe-rust.html#dereferencing-a-raw-pointer).
+        // Then we convert it to a mutable reference by dereferencing it
+        // (through *) and immediately borrowing it again (through &mut). This
+        // conversion requires an unsafe block, since the compiler can’t
+        // guarantee that the raw pointer is valid.        
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+
+        // ********** Sidenote **********
+        // Raw pointer example - create a raw pointer to an arbitrary memory address:
+        // let address = 0xb8000;
+        // let rp = address as *mut Buffer;
+        //         
+        // Recall that we can create raw pointers in safe code, but we can’t
+        // dereference raw pointers and read the data being pointed to.        
+        // Example where we use the dereference operator * on a raw pointer that
+        // requires an unsafe block.
+        // let mut num = 5;
+        // let rp = &mut num as *mut i32;
+        // unsafe { *rp }        
     });
 }
 
@@ -183,41 +205,4 @@ impl fmt::Write for Writer {
         self.write_string(s);
         Ok(())
     }
-}
-
-// A temporary function to write some characters to the screen.
-pub fn print_something() {
-    use core::fmt::Write;
-
-    // Create a new Writer that points to the VGA buffer at
-    // memory address 0xb8000.
-    let mut writer = Writer {
-        column_position: 0,
-        color_code: ColorCode::new(Color::Yellow, Color::Black),
-        // syntax: cast the integer 0xb8000 as an mutable [raw
-        // pointer](https://doc.rust-lang.org/book/ch19-01-unsafe-rust.html#dereferencing-a-raw-pointer).
-        // Then we convert it to a mutable reference by dereferencing it
-        // (through *) and immediately borrowing it again (through &mut). This
-        // conversion requires an unsafe block, since the compiler can’t
-        // guarantee that the raw pointer is valid.
-        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-
-        // ********** Sidenote **********
-        // Raw pointer example - create a raw pointer to an arbitrary memory address:
-        // let address = 0xb8000;
-        // let rp = address as *mut Buffer;
-        //         
-        // Recall that we can create raw pointers in safe code, but we can’t
-        // dereference raw pointers and read the data being pointed to.        
-        // Example where we use the dereference operator * on a raw pointer that
-        // requires an unsafe block.
-        // let mut num = 5;
-        // let rp = &mut num as *mut i32;
-        // unsafe { *rp }
-    };
-
-    writer.write_byte(b'H'); // the b prefix creates a byte literal, which represents an ASCII character.
-    writer.write_string("ello ");
-    writer.write_string("Wörld! "); // test the handling of unprintable characters.
-    write!(writer, "The numbers aaaaa aaaaa aaaaaa aaaaaa\naaaaaa bbbbbb ccccc dddd eeeeeeee fffffffffffff gggggggg gggg are {} and {}", 42, 1.0/3.0).unwrap();
 }

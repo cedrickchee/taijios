@@ -42,6 +42,7 @@ pub extern "C" fn _start() -> ! {
     }
     */
 
+    // Write some characters to the screen.
     use core::fmt::Write;
     vga_buffer::WRITER.lock().write_str("Hello again").unwrap();
     vga_buffer::WRITER.lock().write_byte(b'H'); // the b prefix creates a byte literal, which represents an ASCII character.
