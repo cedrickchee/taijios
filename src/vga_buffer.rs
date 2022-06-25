@@ -1,3 +1,4 @@
+use volatile::Volatile;
 
 // 
 // Colors
@@ -58,7 +59,8 @@ const BUFFER_WIDTH: usize = 80;
 #[repr(transparent)]
 // Represent the text buffer.
 struct Buffer {
-    chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT],
+    // Use volatile lib to make writes to the VGA buffer volatile.
+    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 // 
@@ -102,10 +104,12 @@ impl Writer {
 
                 // Writes a new ScreenChar to the buffer at the current
                 // position.
-                self.buffer.chars[row][col] = ScreenChar {
+                // Volatile::write method guarantees that the compiler will
+                // never optimize away this write.
+                self.buffer.chars[row][col].write(ScreenChar {
                     ascii_character: byte,
                     color_code,
-                };
+                });
                 // Finally, the current column position is advanced.
                 self.colum_position += 1;
             }
