@@ -1,5 +1,6 @@
 use volatile::Volatile;
 use core::fmt;
+use lazy_static::lazy_static;
 
 //
 // A Global Writer as Interface
@@ -11,6 +12,7 @@ lazy_static! {
         color_code: ColorCode::new(Color::Yellow, Color::Black),
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
     };
+}
 
 // 
 // Colors
@@ -82,7 +84,7 @@ struct Buffer {
 // To actually write to screen, we create a writer type.
 pub struct Writer {
     // keep track of the current position in the last row.
-    colum_position: usize,
+    column_position: usize,
     // specify current foreground and background colors.
     color_code: ColorCode,
     // reference to the VGA buffer.
@@ -105,12 +107,12 @@ impl Writer {
                 // When printing a byte, the writer checks if the current line
                 // is full. In that case, a new_line call is required before to
                 // wrap the line.
-                if self.colum_position >= BUFFER_WIDTH {
+                if self.column_position >= BUFFER_WIDTH {
                     self.new_line();
                 }
 
                 let row = BUFFER_HEIGHT - 1;
-                let col = self.colum_position;
+                let col = self.column_position;
 
                 let color_code = self.color_code;
 
@@ -123,7 +125,7 @@ impl Writer {
                     color_code,
                 });
                 // Finally, the current column position is advanced.
-                self.colum_position += 1;
+                self.column_position += 1;
             }
         }
     }
@@ -158,7 +160,7 @@ impl Writer {
             }
         }
         self.clear_row(BUFFER_HEIGHT - 1);
-        self.colum_position = 0;
+        self.column_position = 0;
     }
 
     // Clears a row by overwriting all of its characters with a space character.
@@ -187,7 +189,7 @@ pub fn print_something() {
     // Create a new Writer that points to the VGA buffer at
     // memory address 0xb8000.
     let mut writer = Writer {
-        colum_position: 0,
+        column_position: 0,
         color_code: ColorCode::new(Color::Yellow, Color::Black),
         // syntax: cast the integer 0xb8000 as an mutable [raw
         // pointer](https://doc.rust-lang.org/book/ch19-01-unsafe-rust.html#dereferencing-a-raw-pointer).
