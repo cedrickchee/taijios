@@ -224,8 +224,7 @@ linker does not try to link the C runtime and our build succeeds without any
 linker errors.
 
 This is the approach that we will use for building our OS kernel. Instead of
-`thumbv7em-none-eabihf`, we will use a [custom target]
-(https://doc.rust-lang.org/rustc/targets/custom.html) that describes a `x86_64`
+`thumbv7em-none-eabihf`, we will use a [custom target](https://doc.rust-lang.org/rustc/targets/custom.html) that describes a `x86_64`
 bare metal environment. The details will be explained in the next post.
 </details>
 
@@ -276,6 +275,11 @@ You can run the disk image in [QEMU] through:
 
 ```
 $ cargo run
+    Finished dev [unoptimized + debuginfo] target(s) in 0.03s
+     Running `bootimage runner target/x86_64-tiny_os/debug/tiny-os`
+Building bootloader
+    Finished release [optimized + debuginfo] target(s) in 0.06s
+Running: `qemu-system-x86_64 -drive format=raw,file=target/x86_64-tiny_os/debug/bootimage-tiny-os.bin`
 ```
 
 [QEMU] and the [`bootimage`] tool need to be installed for this.
