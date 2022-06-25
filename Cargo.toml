@@ -9,3 +9,7 @@ authors = ["Cedric Chee <cedric+gh@invictusbyte.com>"]
 [dependencies]
 bootloader = "0.9.8"
 volatile = "0.2.6"
+
+[dependencies.lazy_static]
+version = "1.0"
+features = ["spin_no_std"] # we need this feature since we don’t link the standard library.
