@@ -206,3 +206,38 @@ impl fmt::Write for Writer {
         Ok(())
     }
 }
+
+//
+// println Macro
+// 
+
+// We won’t try to write a macro from scratch. Instead we look at the source of
+// the [println! macro](https://doc.rust-lang.org/nightly/std/macro.println!.html)
+// in the standard library.
+// 
+// To print to the VGA buffer, we just copy the println! and print! macros, but
+// modify them to use our own _print function.
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+#[doc(hidden)]
+// Locks our static WRITER and calls the write_fmt method on it.
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    WRITER.lock().write_fmt(args).unwrap();
+    // Note 1: The additional unwrap() at the end panics if printing isn’t
+    // successful. But since we always return Ok in write_str, that should not
+    // happen.
+    // 
+    // Note 2: Since the macros need to be able to call _print from outside of
+    // the module, the function needs to be public.
+}
