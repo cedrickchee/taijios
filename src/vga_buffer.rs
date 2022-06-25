@@ -1,17 +1,20 @@
 use volatile::Volatile;
 use core::fmt;
 use lazy_static::lazy_static;
+use spin::Mutex;
 
 //
 // A Global Writer as Interface
 //
 
 lazy_static! {
-    pub static ref WRITER: Writer = Writer {
+    // Use the spinning Mutex to add safe interior mutability to our static
+    // WRITER
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
         color_code: ColorCode::new(Color::Yellow, Color::Black),
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-    };
+    });
 }
 
 // 
