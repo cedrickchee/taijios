@@ -1,6 +1,16 @@
 use volatile::Volatile;
 use core::fmt;
 
+//
+// A Global Writer as Interface
+//
+
+pub static WRITER: Writer = Writer {
+    colum_position: 0,
+    color_code: ColorCode::new(Color::Yellow, Color::Black),
+    buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+};
+
 // 
 // Colors
 // 
