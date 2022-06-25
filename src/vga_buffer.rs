@@ -136,7 +136,30 @@ impl Writer {
         }
     }
 
-    fn new_line(&mut self) {/* TODO */}
+    // Moves all lines one line up and clears the last row.
+    fn new_line(&mut self) {
+        // Iterate over all screen characters and move each character one row
+        // up.
+        for row in 1..BUFFER_HEIGHT { // omit the 0th row (the first range starts at 1) because it’s the row that is shifted off screen.
+            for col in 0..BUFFER_WIDTH {
+                let character = self.buffer.chars[row][col].read();
+                self.buffer.chars[row - 1][col].write(character);
+            }
+        }
+        self.clear_row(BUFFER_HEIGHT - 1);
+        self.colum_position = 0;
+    }
+
+    // Clears a row by overwriting all of its characters with a space character.
+    fn clear_row(&mut self, row: usize) {
+        let blank = ScreenChar {
+            ascii_character: b' ',
+            color_code: self.color_code,
+        };
+        for col in 0..BUFFER_WIDTH {
+            self.buffer.chars[row][col].write(blank);
+        }
+    }
 }
 
 impl fmt::Write for Writer {
@@ -180,5 +203,5 @@ pub fn print_something() {
     writer.write_byte(b'H'); // the b prefix creates a byte literal, which represents an ASCII character.
     writer.write_string("ello ");
     writer.write_string("Wörld! "); // test the handling of unprintable characters.
-    write!(writer, "The numbers are {} and {}", 42, 1.0/3.0).unwrap();
+    write!(writer, "The numbers aaaaa aaaaa aaaaaa aaaaaa\naaaaaa bbbbbb ccccc dddd eeeeeeee fffffffffffff gggggggg gggg are {} and {}", 42, 1.0/3.0).unwrap();
 }
