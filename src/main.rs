@@ -16,12 +16,10 @@ fn panic(_info: &PanicInfo) -> ! {
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn _start() -> ! {
     // Write some characters to the screen.
-    use core::fmt::Write;
-    vga_buffer::WRITER.lock().write_str("Hello again").unwrap();
-    vga_buffer::WRITER.lock().write_byte(b'H'); // the b prefix creates a byte literal, which represents an ASCII character.
-    vga_buffer::WRITER.lock().write_string("ello ");
-    vga_buffer::WRITER.lock().write_string("Wörld!\n"); // test the handling of unprintable characters.
-    write!(vga_buffer::WRITER.lock(), "The numbers are {} and {}", 42, 1.0/3.0).unwrap();
+    print!("H");
+    print!("ello ");
+    println!("Wörld!"); // test the handling of unprintable characters.
+    println!("The numbers are {} and {}", 42, 1.0/3.0);
 
     loop {}
 }
