@@ -106,6 +106,46 @@ $ cargo build
     Finished dev [unoptimized + debuginfo] target(s) in 11.90s
 ```
 
+## Creating a Bootimage
+
+To turn our compiled kernel into a bootable disk image, we need to link it with
+a bootloader. The bootloader is responsible for initializing the CPU and loading
+our kernel.
+
+To create a bootable disk image from the compiled kernel, you need to install
+the [`bootimage`] tool:
+
+[`bootimage`]: https://github.com/rust-osdev/bootimage
+
+```
+$ cargo install bootimage
+```
+
+For running bootimage and building the bootloader, you need to have the
+`llvm-tools-preview` rustup component installed. You can install it by executing
+`rustup component add llvm-tools-preview`.
+
+After installing, you can create the bootable disk image by running:
+
+```
+$ cargo bootimage
+Building kernel
+   Compiling bootloader v0.9.22
+   Compiling tiny-os v0.1.0 (/home/neo/dev/work/repo/github/tiny-os)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.49s
+Building bootloader
+   ...
+   Compiling bootloader v0.9.22 (~/.cargo/registry/src/github.com-1ecc6299db9ec823/bootloader-0.9.22)
+   Compiling compiler_builtins v0.1.73
+   ...
+   Compiling x86_64 v0.14.7
+    Finished release [optimized + debuginfo] target(s) in 2.90s
+Created bootimage for `tiny-os` at `~/repo/github/tiny-os/target/x86_64-tiny_os/debug/bootimage-tiny-os.bin`
+```
+
+This creates a bootable disk image in the `target/x86_64-tiny_os/debug`
+directory.
+
 ### Linker Errors
 
 The linker is a program that combines the generated code into an executable.
