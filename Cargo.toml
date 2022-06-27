@@ -29,6 +29,7 @@ features = ["spin_no_std"] # we need this feature since we don’t link the stan
 [package.metadata.bootimage]
 test-args = [
     "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04",
-    "-serial", "stdio"
+    "-serial", "stdio",
+    "-display", "none"
 ]
 test-success-exit-code = 33 # maps a specified exit code to the exit code `0`.  (0x10 << 1) | 1
