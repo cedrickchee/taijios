@@ -32,6 +32,35 @@ fn panic(info: &PanicInfo) -> ! {
     loop {}
 }
 
+/// Enum specify the exit status.
+/// 
+/// Exit with the success exit code if all tests succeeded and with the failure
+/// exit code otherwise.
+/// 
+/// We use exit code `0x10` for success and `0x11` for failure. The actual exit
+/// codes do not matter much, as long as they don’t clash with the default exit
+/// codes of QEMU.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum QemuExitCode {
+    Success = 0x10,
+    Failed = 0x11,
+}
+
+pub fn exit_qemu(exit_code: QemuExitCode) {
+    use x86_64::instructions::port::Port;
+
+    // Creates a new Port at 0xf4, which is the iobase of the `isa-debug-exit`
+    // device. Then it writes the passed exit code to the port. We use `u32`
+    // because we specified the `iosize` of the `isa-debug-exit` device as 4
+    // bytes. Both operations are unsafe, because writing to an I/O port can
+    // generally result in arbitrary behavior.
+    unsafe {
+        let mut port = Port::new(0xf4);
+        port.write(exit_code as u32);
+    }
+}
+
 /// Runner just prints a short debug message and then calls each test function
 /// in the list.
 #[cfg(test)]
@@ -46,6 +75,7 @@ fn test_runner(tests: &[&dyn Fn()]) {
     for test in tests {
         test();
     }
+    exit_qemu(QemuExitCode::Success);
 }
 
 #[test_case]
