@@ -275,3 +275,35 @@ pub fn _print(args: fmt::Arguments) {
     // Note 2: Since the macros need to be able to call _print from outside of
     // the module, the function needs to be public.
 }
+
+/// A very simple test to verify that println works without panicking.
+#[test_case]
+fn test_println_simple() {
+    println!("test_println_simple output");
+}
+
+/// A test to ensure that no panic occurs even if many lines are printed and
+/// lines are shifted off the screen.
+#[test_case]
+fn test_println_many() {
+    for _ in 0..200 {
+        println!("test_println_many output");
+    }
+}
+
+/// A test function to verify that the printed lines really appear on the
+/// screen.
+#[test_case]
+fn test_println_output() {
+    // Defines a test string, prints it using `println`, and then iterates over
+    // the screen characters of the static `WRITER`, which represents the vga
+    // text buffer. Since `println` prints to the last screen line and then
+    // immediately appends a newline, the string should appear on line
+    // `BUFFER_HEIGHT - 2`.
+    let s = "Some test string that fits on a single line";
+    println!("{}", s);
+    for (i, c) in s.chars().enumerate() {
+        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
+        assert_eq!(char::from(screen_char.ascii_character), c);
+    }
+}
