@@ -149,9 +149,9 @@ impl Writer {
         match byte {
             b'\n' => self.new_line(),
             byte => {
-                /// When printing a byte, the writer checks if the current line
-                /// is full. In that case, a new_line call is required before to
-                /// wrap the line.
+                // When printing a byte, the writer checks if the current line
+                // is full. In that case, a new_line call is required before to
+                // wrap the line.
                 if self.column_position >= BUFFER_WIDTH {
                     self.new_line();
                 }
@@ -161,14 +161,14 @@ impl Writer {
 
                 let color_code = self.color_code;
 
-                /// Writes a new ScreenChar to the buffer at the current
-                /// position. Volatile::write method guarantees that the
-                /// compiler will never optimize away this write.
+                // Writes a new ScreenChar to the buffer at the current
+                // position. Volatile::write method guarantees that the
+                // compiler will never optimize away this write.
                 self.buffer.chars[row][col].write(ScreenChar {
                     ascii_character: byte,
                     color_code,
                 });
-                /// Finally, the current column position is advanced.
+                // Finally, the current column position is advanced.
                 self.column_position += 1;
             }
         }
