@@ -1,3 +1,9 @@
+//! # VGA Text Buffer
+//! 
+//! A module that defines the structure of the VGA text buffer and encapsulates
+//! the unsafety of writing to the memory mapped buffer. It also presents a safe
+//! and convenient interface to the outside.
+
 use volatile::Volatile;
 use core::fmt;
 use lazy_static::lazy_static;
