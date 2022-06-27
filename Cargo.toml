@@ -14,3 +14,15 @@ spin = "0.5.2"
 [dependencies.lazy_static]
 version = "1.0"
 features = ["spin_no_std"] # we need this feature since we don’t link the standard library.
+
+# Enable QEMU special `isa-debug-exit` device, which provides an easy way to
+# exit QEMU from the guest system.
+# 
+# The `bootimage runner` appends the test-args to the default QEMU command for
+# all test executables. For a normal `cargo run`, the arguments are ignored.
+# 
+# Together with the device name (`isa-debug-exit`), we pass the two parameters
+# `iobase` and `iosize` that specify the I/O port through which the device can
+# be reached from our kernel.
+[package.metadata.bootimage]
+test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"]
