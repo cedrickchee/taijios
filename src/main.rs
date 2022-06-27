@@ -73,10 +73,28 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
     }
 }
 
+pub trait Testable {
+    fn run(&self) -> ();
+}
+
+impl <T> Testable for T
+where
+    T: Fn()
+{
+    fn run(&self) {
+        // Print the function name. `core::any::type_name` function is
+        // implemented directly in the compiler and returns a string description
+        // of every type.
+        serial_print!("{}...\t", core::any::type_name::<T>());
+        self(); // invoke the test function
+        serial_println!("[ok]");
+    }
+}
+
 /// Runner just prints a short debug message and then calls each test function
 /// in the list.
 #[cfg(test)]
-fn test_runner(tests: &[&dyn Fn()]) {
+fn test_runner(tests: &[&dyn Testable]) {
     // ********** Sidenote **********
     //
     // syntax: &[&dyn Fn()] is a slice of trait object references of the Fn()
@@ -85,14 +103,12 @@ fn test_runner(tests: &[&dyn Fn()]) {
 
     serial_println!("Running {} tests", tests.len());
     for test in tests {
-        test();
+        test.run();
     }
     exit_qemu(QemuExitCode::Success);
 }
 
 #[test_case]
 fn trivial_assertion() {
-    serial_print!("trivial assertion... ");
     assert_eq!(1, 1);
-    serial_println!("[ok]");
 }
