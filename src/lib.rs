@@ -2,6 +2,7 @@
 // recognized by cargo.
 
 #![no_std] // The library is a separate compilation unit, so we need to specify the attribute again.
+#![cfg_attr(test, no_main)] // use the cfg_attr crate attribute to conditionally enable the no_main attribute.
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
