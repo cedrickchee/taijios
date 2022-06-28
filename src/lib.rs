@@ -6,11 +6,13 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+#![feature(abi_x86_interrupt)] // to use the `x86-interrupt` calling convention anyway (which is still unstable).
 
 use core::panic::PanicInfo;
 
 pub mod vga_buffer;
 pub mod serial;
+pub mod interrupts;
 
 pub trait Testable {
     fn run(&self) -> ();
