@@ -17,10 +17,16 @@ pub extern "C" fn _start() -> ! {
     println!("Wörld!"); // test the handling of unprintable characters.
     println!("The numbers are {} and {}", 42, 1.0/3.0);
 
+    tiny_os::init();
+
+    // Invoke a breakpoint exception.
+    x86_64::instructions::interrupts::int3();
+
     // Call the renamed test framework entry function.
     #[cfg(test)] // use conditional compilation to add the call to `test_main` only in test contexts.
     test_main();
 
+    println!("It did not crash!");
     loop {}
 }
 

@@ -14,6 +14,12 @@ pub mod vga_buffer;
 pub mod serial;
 pub mod interrupts;
 
+/// A central place for initialization routines.
+pub fn init() {
+    // Creates a new IDT.
+    interrupts::init_idt();
+}
+
 pub trait Testable {
     fn run(&self) -> ();
 }
