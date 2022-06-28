@@ -29,6 +29,7 @@ lazy_static! {
         let mut idt = InterruptDescriptorTable::new();
         // Add breakpoint handler to our IDT.
         idt.breakpoint.set_handler_fn(breakpoint_handler);
+        idt.double_fault.set_handler_fn(double_fault_handler);
         idt
     };
 }
@@ -57,4 +58,20 @@ pub fn init_idt() {
 /// then continue the program.
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+}
+
+/// A double fault handler.
+/// 
+/// A double fault is a normal exception with an error code.
+/// 
+/// One difference to the breakpoint handler is that the double fault handler is
+/// diverging. The reason is that the x86_64 architecture does not permit
+/// returning from a double fault exception.
+extern "x86-interrupt" fn double_fault_handler(
+    stack_frame: InterruptStackFrame, _error_code: u64) -> !
+{
+    // Prints a short error message and dumps the exception stack frame. The
+    // error code of the double fault handler is always zero, so there’s no
+    // reason to print it.
+    panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
