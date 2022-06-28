@@ -52,6 +52,7 @@
 - [Building](#building)
 - [Creating a Bootimage](#creating-a-bootimage)
 - [Running](#running)
+- [Testing](#testing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
 
@@ -293,3 +294,7 @@ $ dd if=target/x86_64-tiny_os/debug/bootimage-tiny-os.bin of=/dev/sdX && sync
 
 Where `sdX` is the device name of your USB stick. **Be careful** to choose the
 correct device name, because everything on that device is overwritten.
+
+## Testing
+
+To run the unit and integration tests, execute `cargo test`.
