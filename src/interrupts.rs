@@ -10,6 +10,9 @@ pub fn init_idt() {
     let mut idt = InterruptDescriptorTable::new();
     // Add breakpoint handler to our IDT.
     idt.breakpoint.set_handler_fn(breakpoint_handler);
+    // In order that the CPU uses our new interrupt descriptor table, we need to
+    // load it using the `lidt` instruction.
+    idt.load();
 }
 
 /// A handler for the breakpoint exception.
