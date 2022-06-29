@@ -5,6 +5,7 @@
 
 use x86_64::VirtAddr;
 use x86_64::structures::tss::TaskStateSegment;
+use x86_64::structures::gdt::{ GlobalDescriptorTable, Descriptor };
 use lazy_static::lazy_static;
 
 /// Define that the 0th IST entry is the double fault stack (any other IST index
@@ -37,6 +38,16 @@ lazy_static! {
             stack_end
         };
         tss
+    };
+}
+
+lazy_static! {
+    /// Creates a GDT that includes a segment for our TSS static.
+    static ref GDT: GlobalDescriptorTable = {
+        let mut gdt = GlobalDescriptorTable::new();
+        gdt.add_entry(Descriptor::kernel_code_segment());
+        gdt.add_entry(Descriptor::tss_segment(&TSS));
+        gdt
     };
 }
 
