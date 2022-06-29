@@ -13,6 +13,7 @@ use core::panic::PanicInfo;
 pub mod vga_buffer;
 pub mod serial;
 pub mod interrupts;
+pub mod gdt;
 
 /// A central place for initialization routines.
 pub fn init() {
