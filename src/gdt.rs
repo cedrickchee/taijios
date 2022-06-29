@@ -5,7 +5,7 @@
 
 use x86_64::VirtAddr;
 use x86_64::structures::tss::TaskStateSegment;
-use x86_64::structures::gdt::{ GlobalDescriptorTable, Descriptor };
+use x86_64::structures::gdt::{ GlobalDescriptorTable, Descriptor, SegmentSelector };
 use lazy_static::lazy_static;
 
 /// Define that the 0th IST entry is the double fault stack (any other IST index
@@ -43,20 +43,38 @@ lazy_static! {
 
 lazy_static! {
     /// Creates a GDT that includes a segment for our TSS static.
-    static ref GDT: GlobalDescriptorTable = {
+    static ref GDT: (GlobalDescriptorTable, Selectors) = {
         let mut gdt = GlobalDescriptorTable::new();
-        gdt.add_entry(Descriptor::kernel_code_segment());
-        gdt.add_entry(Descriptor::tss_segment(&TSS));
-        gdt
+        let code_selector = gdt.add_entry(Descriptor::kernel_code_segment());
+        let tss_selector = gdt.add_entry(Descriptor::tss_segment(&TSS));
+        (gdt, Selectors { code_selector, tss_selector })
     };
+}
+
+/// struct allows access to the `code_selector` and `tss_selector` variables.
+struct Selectors {
+    code_selector: SegmentSelector,
+    tss_selector: SegmentSelector,
 }
 
 /// Initializes GDT and loads the GDT in the CPU using the lgdt instruction.
 pub fn init() {
+    use x86_64::instructions::tables::load_tss;
+    use x86_64::instructions::segmentation::{ CS, Segment };
+
     // A way to tell the CPU that it should use the new TSS.
     // This loads our TSS by invoking the ltr instruction with the respective
     // GDT index.
-    GDT.load();
+    GDT.0.load();
+
+    // We loaded a GDT that contains a TSS selector, but we still need to tell
+    // the CPU that it should use that TSS.
+    unsafe {
+        // Use the selectors to reload the `cs` segment register and load our TSS.
+        
+        CS::set_reg(GDT.1.code_selector);
+        load_tss(GDT.1.tss_selector);
+    }
 }
 
 // ********** Sidenote **********
