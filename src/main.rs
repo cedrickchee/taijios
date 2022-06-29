@@ -19,6 +19,13 @@ pub extern "C" fn _start() -> ! {
 
     tiny_os::init();
 
+    fn stack_overflow() {
+        stack_overflow(); // for each recursion, the return address is pushed
+    }
+
+    // Trigger a stack overflow.
+    stack_overflow();
+
     // Call the renamed test framework entry function.
     #[cfg(test)] // use conditional compilation to add the call to `test_main` only in test contexts.
     test_main();
