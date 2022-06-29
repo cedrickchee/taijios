@@ -19,19 +19,6 @@ pub extern "C" fn _start() -> ! {
 
     tiny_os::init();
 
-    // Trigger a double fault.
-    unsafe {
-        // Write to the invalid address `0xdeadbeef`.
-        //
-        // The virtual address is not mapped to a physical address in the page
-        // tables, so a page fault occurs. We haven’t registered a page fault
-        // handler in our IDT, so a double fault occurs.
-        *(0xdeadbeef as *mut u64) = 42;
-    }
-
-    // Invoke a breakpoint exception.
-    x86_64::instructions::interrupts::int3();
-
     // Call the renamed test framework entry function.
     #[cfg(test)] // use conditional compilation to add the call to `test_main` only in test contexts.
     test_main();
