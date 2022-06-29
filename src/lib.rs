@@ -17,6 +17,8 @@ pub mod gdt;
 
 /// A central place for initialization routines.
 pub fn init() {
+    // Loads our GDT.
+    gdt::init();
     // Creates a new IDT.
     interrupts::init_idt();
 }

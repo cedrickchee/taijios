@@ -51,6 +51,14 @@ lazy_static! {
     };
 }
 
+/// Initializes GDT and loads the GDT in the CPU using the lgdt instruction.
+pub fn init() {
+    // A way to tell the CPU that it should use the new TSS.
+    // This loads our TSS by invoking the ltr instruction with the respective
+    // GDT index.
+    GDT.load();
+}
+
 // ********** Sidenote **********
 //
 // Avoid stack overflow problem
