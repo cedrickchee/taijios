@@ -73,7 +73,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
 /// Enum specify the exit status.
@@ -105,6 +105,15 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
     }
 }
 
+/// An energy efficient endless loop created using the `hlt` instruction.
+pub fn hlt_loop() -> ! {
+    loop {
+        // Halt the CPU until the next interrupt arrives. This allows the CPU to
+        // enter a sleep state in which it consumes much less energy.
+        x86_64::instructions::hlt();
+    }
+}
+
 /// Entry point for `cargo test`.
 ///
 /// Since our `lib.rs` is tested independently of our `main.rs`, we need to add
@@ -116,7 +125,7 @@ pub extern "C" fn _start() -> ! {
     init();
     test_main();
 
-    loop {}
+    hlt_loop();
 }
 
 /// Panic handler in test mode.

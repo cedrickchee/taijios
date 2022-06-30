@@ -30,12 +30,7 @@ pub extern "C" fn _start() -> ! {
     test_main();
 
     println!("It did not crash!");
-    loop {
-        for _ in 0..10000 {
-            // Provoke a deadlock by printing something in the loop.
-            print!("-");
-        }
-    }
+    tiny_os::hlt_loop(); // use this `hlt_loop` instead of the endless loops
 }
 
 /// This function is called on panic.
@@ -43,7 +38,7 @@ pub extern "C" fn _start() -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    tiny_os::hlt_loop();
 }
 
 /// Panic handler in test mode.
