@@ -18,6 +18,7 @@ pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 #[repr(u8)]
 pub enum InterruptIndex {
     Timer = PIC_1_OFFSET,
+    Keyboard, // the keyboard uses line 1 of the primary PIC. This means that it arrives at the CPU as interrupt 33 (1 + offset 32).
 }
 
 impl InterruptIndex {
@@ -66,6 +67,8 @@ lazy_static! {
         }
         idt[InterruptIndex::Timer.as_usize()]
             .set_handler_fn(timer_interrupt_handler);
+        idt[InterruptIndex::Keyboard.as_usize()]
+            .set_handler_fn(keyboard_interrupt_handler);
         idt
     };
 }
@@ -144,6 +147,17 @@ extern "x86-interrupt" fn timer_interrupt_handler(
     }
 }
 
+extern "x86-interrupt" fn keyboard_interrupt_handler(
+    _stack_frame: InterruptStackFrame)
+{
+    print!("k");
+
+    unsafe {
+        PICS.lock()
+            .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
+    }
+}
+
 // ********** Sidenote **********
 // 
 // # Hardware interrupts
@@ -182,3 +196,16 @@ extern "x86-interrupt" fn timer_interrupt_handler(
 // 
 // The configuration happens by writing special values to the command and data
 // ports of the PICs.
+// 
+// ## Keyboard input
+// 
+// Like the hardware timer, the keyboard controller is already enabled by
+// default. So when you press a key the keyboard controller sends an interrupt
+// to the PIC, which forwards it to the CPU. The CPU looks for a handler
+// function in the IDT, but the corresponding entry is empty. Therefore a double
+// fault occurs.
+// 
+// Note that we only handle PS/2 keyboards here, not USB keyboards. However the
+// mainboard emulates USB keyboards as PS/2 devices to support older software,
+// so we can safely ignore USB keyboards until we have USB support in our
+// kernel.
