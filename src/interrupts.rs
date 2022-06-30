@@ -119,6 +119,29 @@ extern "x86-interrupt" fn timer_interrupt_handler(
     // As the timer interrupt happens periodically, we would expect to see a dot
     // appearing on each timer tick.
     print!(".");
+
+    // End of interrupt.
+    //
+    // The PIC expects an explicit “end of interrupt” (EOI) signal from our
+    // interrupt handler. This signal tells the controller that the interrupt
+    // was processed and that the system is ready to receive the next interrupt.
+    unsafe {
+        PICS.lock()
+            .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());
+        // ********** Sidenote **********
+        //
+        // The `notify_end_of_interrupt` figures out whether the primary or
+        // secondary PIC sent the interrupt and then uses the command and data
+        // ports to send an EOI signal to respective controllers. If the
+        // secondary PIC sent the interrupt both PICs need to be notified
+        // because the secondary PIC is connected to an input line of the
+        // primary PIC.
+        // 
+        // We need to be careful to use the correct interrupt vector number,
+        // otherwise we could accidentally delete an important unsent interrupt
+        // or cause our system to hang. This is the reason that the function is
+        // unsafe.
+    }
 }
 
 // ********** Sidenote **********
