@@ -159,7 +159,27 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(
     // Read a byte from the keyboard's data port. This byte is called the
     // scancode and is a number that represents the key press/release.
     let scancode: u8 = unsafe { port.read() };
-    print!("{}", scancode);
+    
+    // Translate the scancodes to keys.
+    // 
+    // Translates keypresses of the number keys 0-9 and ignores all other keys.
+    let key = match scancode {
+        0x02 => Some('1'),
+        0x03 => Some('2'),
+        0x04 => Some('3'),
+        0x05 => Some('4'),
+        0x06 => Some('5'),
+        0x07 => Some('6'),
+        0x08 => Some('7'),
+        0x09 => Some('8'),
+        0x0a => Some('9'),
+        0x0b => Some('0'),
+        _ => None,
+    };
+    if let Some(key) = key {
+        print!("{}", key);
+    }
+
 
     unsafe {
         PICS.lock()
@@ -224,3 +244,21 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(
 // press keys no more characters appear on the screen. This is because the
 // keyboard controller won’t send another interrupt until we have read the
 // so-called scancode of the pressed key.
+//
+// ### Interpreting the Scancodes
+// 
+// There are three different standards for the mapping between scancodes and
+// keys, the so-called scancode sets. All three go back to the keyboards of
+// early IBM computers: the IBM XT, the IBM 3270 PC, and the IBM AT. Later
+// computers fortunately did not continue the trend of defining new scancode
+// sets, but rather emulated the existing sets and extended them. Today most
+// keyboards can be configured to emulate any of the three sets.
+// 
+// By default, PS/2 keyboards emulate scancode set 1 (“XT”). In this set, the
+// lower 7 bits of a scancode byte define the key, and the most significant bit
+// defines whether it’s a press (“0”) or a release (“1”). Keys that were not
+// present on the original IBM XT keyboard, such as the enter key on the keypad,
+// generate two scancodes in succession: a `0xe0` escape byte and then a byte
+// representing the key. For a list of all set 1 scancodes and their
+// corresponding keys, check out the [OSDev
+// Wiki](https://wiki.osdev.org/Keyboard#Scan_Code_Set_1).
