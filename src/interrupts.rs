@@ -150,7 +150,16 @@ extern "x86-interrupt" fn timer_interrupt_handler(
 extern "x86-interrupt" fn keyboard_interrupt_handler(
     _stack_frame: InterruptStackFrame)
 {
-    print!("k");
+    use x86_64::instructions::port::Port;
+
+    // To find out which key was pressed, we need to query the keyboard
+    // controller. We do this by reading from the data port of the PS/2
+    // controller, which is the I/O port with number `0x60`.
+    let mut port = Port::new(0x60);
+    // Read a byte from the keyboard's data port. This byte is called the
+    // scancode and is a number that represents the key press/release.
+    let scancode: u8 = unsafe { port.read() };
+    print!("{}", scancode);
 
     unsafe {
         PICS.lock()
@@ -209,3 +218,9 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(
 // mainboard emulates USB keyboards as PS/2 devices to support older software,
 // so we can safely ignore USB keyboards until we have USB support in our
 // kernel.
+//
+// We now see that a character appears on the screen when we press a key.
+// However, this only works for the first key we press, even if we continue to
+// press keys no more characters appear on the screen. This is because the
+// keyboard controller won’t send another interrupt until we have read the
+// so-called scancode of the pressed key.
