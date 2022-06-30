@@ -24,6 +24,13 @@ pub fn init() {
 
     // Initializes the 8259 PIC.
     unsafe { interrupts::PICS.lock().initialize() }; // the initialize function is unsafe because it can cause undefined behavior if the PIC is misconfigured.
+    
+    // Enable interrupts.
+    // 
+    // Until now nothing happened because interrupts are still disabled in the
+    // CPU configuration. This means that the CPU does not listen to the
+    // interrupt controller at all, so no interrupts can reach the CPU.
+    x86_64::instructions::interrupts::enable();
 }
 
 pub trait Testable {
