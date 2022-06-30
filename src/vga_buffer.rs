@@ -300,15 +300,36 @@ fn test_println_many() {
 /// screen.
 #[test_case]
 fn test_println_output() {
+    use core::fmt::Write;
+    use x86_64::instructions::interrupts;
+
     // Defines a test string, prints it using `println`, and then iterates over
     // the screen characters of the static `WRITER`, which represents the vga
     // text buffer. Since `println` prints to the last screen line and then
     // immediately appends a newline, the string should appear on line
     // `BUFFER_HEIGHT - 2`.
     let s = "Some test string that fits on a single line";
-    println!("{}", s);
-    for (i, c) in s.chars().enumerate() {
-        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
-        assert_eq!(char::from(screen_char.ascii_character), c);
-    }
+
+    // A race condition:
+    //
+    // The race condition occurs because the timer interrupt handler might run
+    // between the println and the reading of the screen characters.
+    //
+    // To fix this, we need to keep the `WRITER` locked for the complete
+    // duration of the test, so that the timer handler can’t write a `.` to the
+    // screen in between.
+    //
+    // Sidenote: The `without_interrupts` function takes a closure and executes
+    // it in an interrupt-free environment. We use it to ensure that no
+    // interrupt can occur as long as the `Mutex` is locked.
+    interrupts::without_interrupts(|| { // to avoid another deadlock, we disable interrupts for the tests duration
+        let mut writer = WRITER.lock(); // keep the writer locked for the complete test
+        // Instead of `println`, we use the `writeln` macro that allows printing
+        // to an already locked writer.
+        writeln!(writer, "\n{}", s).expect("writeln failed"); // since the timer interrupt handler can still run before the test, we print an additional newline `\n` before printing the string `s`.
+        for (i, c) in s.chars().enumerate() {
+            let screen_char = writer.buffer.chars[BUFFER_HEIGHT - 2][i].read();
+            assert_eq!(char::from(screen_char.ascii_character), c);
+        }
+    });
 }
