@@ -150,36 +150,50 @@ extern "x86-interrupt" fn timer_interrupt_handler(
 extern "x86-interrupt" fn keyboard_interrupt_handler(
     _stack_frame: InterruptStackFrame)
 {
+    use pc_keyboard::{ layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1 };
+    use spin::Mutex;
     use x86_64::instructions::port::Port;
 
+    lazy_static! {
+        /// Initialize the `Keyboard` with an US keyboard layout and the
+        /// scancode set 1. The `HandleControl` parameter allows to map
+        /// `ctrl+[a-z]` to the Unicode characters `U+0001` through `U+001A`. We
+        /// don’t want to do that, so we use the `Ignore` option to handle the
+        /// ctrl like normal keys.
+        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> =
+            Mutex::new(Keyboard::new(layouts::Us104Key, ScancodeSet1,
+                HandleControl::Ignore)
+            );
+    }
+
+    // On each interrupt, we lock the `Mutex`.
+    let mut keyboard = KEYBOARD.lock();
+
+    // Read the scancode from the keyboard controller.
+    // 
     // To find out which key was pressed, we need to query the keyboard
     // controller. We do this by reading from the data port of the PS/2
     // controller, which is the I/O port with number `0x60`.
-    let mut port = Port::new(0x60);
+    let mut port = Port::new(0x60);    
     // Read a byte from the keyboard's data port. This byte is called the
     // scancode and is a number that represents the key press/release.
     let scancode: u8 = unsafe { port.read() };
     
     // Translate the scancodes to keys.
-    // 
-    // Translates keypresses of the number keys 0-9 and ignores all other keys.
-    let key = match scancode {
-        0x02 => Some('1'),
-        0x03 => Some('2'),
-        0x04 => Some('3'),
-        0x05 => Some('4'),
-        0x06 => Some('5'),
-        0x07 => Some('6'),
-        0x08 => Some('7'),
-        0x09 => Some('8'),
-        0x0a => Some('9'),
-        0x0b => Some('0'),
-        _ => None,
-    };
-    if let Some(key) = key {
-        print!("{}", key);
+    //
+    // Pass the scancode to the `add_byte` method, which translates the scancode
+    // into an `Option<KeyEvent>`. The `KeyEvent` contains which key caused the
+    // event and whether it was a press or release event.
+    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
+        // To interpret this key event, we pass it to the `process_keyevent`
+        // method, which translates the key event to a character if possible.
+        if let Some(key) = keyboard.process_keyevent(key_event) {
+            match key {
+                DecodedKey::Unicode(character) => print!("{}", character),
+                DecodedKey::RawKey(key) => print!("{:?}", key),
+            }
+        }
     }
-
 
     unsafe {
         PICS.lock()
