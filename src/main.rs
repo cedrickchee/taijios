@@ -30,7 +30,10 @@ pub extern "C" fn _start() -> ! {
     test_main();
 
     println!("It did not crash!");
-    loop {}
+    loop {
+        // Provoke a deadlock by printing something in the loop.
+        print!("-");
+    }
 }
 
 /// This function is called on panic.
