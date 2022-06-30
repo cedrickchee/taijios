@@ -21,6 +21,9 @@ pub fn init() {
     gdt::init();
     // Creates a new IDT.
     interrupts::init_idt();
+
+    // Initializes the 8259 PIC.
+    unsafe { interrupts::PICS.lock().initialize() }; // the initialize function is unsafe because it can cause undefined behavior if the PIC is misconfigured.
 }
 
 pub trait Testable {
