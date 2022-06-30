@@ -265,15 +265,20 @@ macro_rules! println {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    // Locks our static WRITER and calls the write_fmt method on it.
-    WRITER.lock().write_fmt(args).unwrap();
-    // ********** Sidenote **********
-    // Note 1: The additional unwrap() at the end panics if printing isn’t
-    // successful. But since we always return Ok in write_str, that should not
-    // happen.
-    //
-    // Note 2: Since the macros need to be able to call _print from outside of
-    // the module, the function needs to be public.
+    use x86_64::instructions::interrupts;
+    // To avoid deadlock, we can disable interrupts as long as the `Mutex` is
+    // locked.
+    interrupts::without_interrupts(|| {
+        // Locks our static WRITER and calls the write_fmt method on it.
+        WRITER.lock().write_fmt(args).unwrap();
+        // ********** Sidenote **********
+        // Note 1: The additional unwrap() at the end panics if printing isn’t
+        // successful. But since we always return Ok in write_str, that should not
+        // happen.
+        //
+        // Note 2: Since the macros need to be able to call _print from outside of
+        // the module, the function needs to be public.        
+    });
 }
 
 /// A very simple test to verify that println works without panicking.
