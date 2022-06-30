@@ -90,3 +90,42 @@ extern "x86-interrupt" fn double_fault_handler(
     // reason to print it.
     panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
+
+// ********** Sidenote **********
+// 
+// # Hardware interrupts
+// 
+// Interrupts provide a way to notify the CPU from attached hardware devices.
+// 
+// Connecting all hardware devices directly to the CPU is not possible. Instead,
+// a separate interrupt controller aggregates the interrupts from all devices
+// and then notifies the CPU.
+//
+// Most interrupt controllers are programmable, which means that they support
+// different priority levels for interrupts.
+//
+// Unlike exceptions, hardware interrupts occur asynchronously. This means that
+// they are completely independent from the executed code and can occur at any
+// time.
+// 
+// ## The 8259 PIC
+// 
+// The 8259 has 8 interrupt lines and several lines for communicating with the
+// CPU. The typical systems back then were equipped with two instances of the
+// 8259 PIC, one primary and one secondary PIC connected to one of the interrupt
+// lines of the primary.
+// 
+// Each controller can be configured through two I/O ports, one “command” port
+// and one “data” port. For the primary controller these ports are 0x20
+// (command) and 0x21 (data). For the secondary controller they are 0xa0
+// (command) and 0xa1 (data).
+//
+// ### Implementation
+// 
+// The default configuration of the PICs is not usable, because it sends
+// interrupt vector numbers in the range 0–15 to the CPU. These numbers are
+// already occupied by CPU exceptions, for example number 8 corresponds to a
+// double fault.
+// 
+// The configuration happens by writing special values to the command and data
+// ports of the PICs.
