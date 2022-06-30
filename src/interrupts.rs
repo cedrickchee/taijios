@@ -6,10 +6,29 @@ use x86_64::structures::idt::{ InterruptDescriptorTable, InterruptStackFrame };
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin;
-use crate::{ println, gdt };
+use crate::{ print, println, gdt };
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
+
+/// The timer uses line 0 of the primary PIC. This means that it arrives at the
+/// CPU as interrupt 32 (0 + offset 32). Instead of hardcoding index 32, we
+/// store it in an InterruptIndex enum.
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum InterruptIndex {
+    Timer = PIC_1_OFFSET,
+}
+
+impl InterruptIndex {
+    fn as_u8(self) -> u8 {
+        self as u8
+    }
+
+    fn as_usize(self) -> usize {
+        usize::from(self.as_u8())
+    }
+}
 
 /// Sets the offsets for the 8259 Programmable Interrupt Controllers (PICs) to
 /// the range 32–47.
@@ -45,6 +64,8 @@ lazy_static! {
                 // by setting the stack index.
                 .set_stack_index(gdt::DOUBLE_FAULT_IST_INDEX);
         }
+        idt[InterruptIndex::Timer.as_usize()]
+            .set_handler_fn(timer_interrupt_handler);
         idt
     };
 }
@@ -89,6 +110,15 @@ extern "x86-interrupt" fn double_fault_handler(
     // error code of the double fault handler is always zero, so there’s no
     // reason to print it.
     panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
+}
+
+// A handler function for the timer interrupt.
+extern "x86-interrupt" fn timer_interrupt_handler(
+    _stack_frame: InterruptStackFrame)
+{
+    // As the timer interrupt happens periodically, we would expect to see a dot
+    // appearing on each timer tick.
+    print!(".");
 }
 
 // ********** Sidenote **********
