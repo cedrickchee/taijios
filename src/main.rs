@@ -31,8 +31,10 @@ pub extern "C" fn _start() -> ! {
 
     println!("It did not crash!");
     loop {
-        // Provoke a deadlock by printing something in the loop.
-        print!("-");
+        for _ in 0..10000 {
+            // Provoke a deadlock by printing something in the loop.
+            print!("-");
+        }
     }
 }
 
