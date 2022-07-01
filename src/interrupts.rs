@@ -2,11 +2,11 @@
 //! 
 //! Handle CPU exceptions in our kernel.
 
-use x86_64::structures::idt::{ InterruptDescriptorTable, InterruptStackFrame };
+use x86_64::structures::idt::{ InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode };
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin;
-use crate::{ print, println, gdt };
+use crate::{ print, println, gdt, hlt_loop };
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
@@ -59,6 +59,8 @@ lazy_static! {
         let mut idt = InterruptDescriptorTable::new();
         // Add breakpoint handler to our IDT.
         idt.breakpoint.set_handler_fn(breakpoint_handler);
+        // Register a page fault handler in our IDT.
+        idt.page_fault.set_handler_fn(page_fault_handler);
         unsafe {
             idt.double_fault.set_handler_fn(double_fault_handler)
                 // Assigns a IST stack to this handler in the IDT
@@ -97,6 +99,29 @@ pub fn init_idt() {
 /// then continue the program.
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+}
+
+/// A page fault handler.
+/// 
+/// The `PageFaultErrorCode` type provides more information about the type of
+/// memory access that caused the page fault, for example whether it was caused
+/// by a read or write operation.
+extern "x86-interrupt" fn page_fault_handler(
+    stack_frame: InterruptStackFrame,
+    error_code: PageFaultErrorCode,
+) {
+    use x86_64::registers::control::Cr2;
+
+    println!("EXCEPTION: PAGE FAULT");
+    // The `CR2` register is automatically set by the CPU on a page fault and
+    // contains the accessed virtual address that caused the page fault. We use
+    // the `Cr2::read` function to read it.
+    println!("Accessed Address: {:?}", Cr2::read());
+    println!("Error Code: {:?}", error_code);
+    println!("{:#?}", stack_frame);
+    // We can’t continue execution without resolving the page fault, so we enter
+    // a `hlt_loop` at the end.
+    hlt_loop();
 }
 
 /// A double fault handler.

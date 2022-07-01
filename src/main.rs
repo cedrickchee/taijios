@@ -25,6 +25,27 @@ pub extern "C" fn _start() -> ! {
     // }
     // stack_overflow();
 
+    // Try to cause a page fault by accessing some memory outside of our kernel.
+    let ptr = 0xdeadbeef as *mut u32; // 0x206cd0
+    unsafe { *ptr = 42; }
+
+    // Uncomment lines below to try to read from a code page.
+
+    // We see that the current instruction pointer is `0x206cd0`, so we know
+    // that this address points to a code page. Code pages are mapped read-only
+    // by the bootloader, so reading from this address works but writing causes
+    // a page fault.
+    // 
+    // Note: The actual address might be different for you. Use the address that
+    // your page fault handler reports.
+    // let ptr = 0x206cd0 as *mut u32;
+    // read from a code page
+    // unsafe { let x = *ptr; }
+    // println!("read worked");
+    // write to a code page
+    // unsafe { *ptr = 42; }
+    // println!("write worked");
+
     // Call the renamed test framework entry function.
     #[cfg(test)] // use conditional compilation to add the call to `test_main` only in test contexts.
     test_main();
