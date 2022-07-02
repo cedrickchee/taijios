@@ -19,6 +19,11 @@ pub extern "C" fn _start() -> ! {
 
     tiny_os::init();
 
+    // Access the page tables.
+    use x86_64::registers::control::Cr3;
+    let (level_4_page_table, _) = Cr3::read(); // returns the currently active level 4 page table from the CR3 register.
+    println!("Level 4 page table at: {:?}", level_4_page_table.start_address()); // print "Level 4 page table at: PhysAddr(0x1000)"
+
     // Uncomment lines below to trigger a stack overflow.
     // fn stack_overflow() {
     //     stack_overflow(); // for each recursion, the return address is pushed
