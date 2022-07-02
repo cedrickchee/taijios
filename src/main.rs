@@ -25,9 +25,10 @@ pub extern "C" fn _start() -> ! {
     // }
     // stack_overflow();
 
-    // Try to cause a page fault by accessing some memory outside of our kernel.
-    let ptr = 0xdeadbeef as *mut u32; // 0x206cd0
-    unsafe { *ptr = 42; }
+    // Uncomment lines below to try to cause a page fault by accessing some
+    // memory outside of our kernel.
+    // let ptr = 0xdeadbeef as *mut u32; // 0x206cd0
+    // unsafe { *ptr = 42; }
 
     // Uncomment lines below to try to read from a code page.
 
