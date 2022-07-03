@@ -15,6 +15,10 @@ use tiny_os::{println, print};
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use tiny_os::memory::active_level_4_table;
+    use x86_64::VirtAddr;
+    use x86_64::structures::paging::PageTable;
+    
     // Write some characters to the screen.
     print!("H");
     print!("ello ");
@@ -24,9 +28,37 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     tiny_os::init();
 
     // Access the page tables.
-    use x86_64::registers::control::Cr3;
-    let (level_4_page_table, _) = Cr3::read(); // returns the currently active level 4 page table from the CR3 register.
-    println!("Level 4 page table at: {:?}", level_4_page_table.start_address()); // print "Level 4 page table at: PhysAddr(0x1000)"
+    // Print the entries of the level 4 page table.
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let l4_table = unsafe { active_level_4_table(phys_mem_offset) };
+
+    for (i, entry) in l4_table.iter().enumerate() {
+        // Print non-empty entries because all 512 entries wouldn’t fit on the screen.
+        if !entry.is_unused() {
+            // We see that there are various non-empty entries, which all map to
+            // different level 3 tables. There are so many regions because
+            // kernel code, kernel stack, the physical memory mapping, and the
+            // boot information all use separate memory areas.
+            println!("L4 Entry {}: {:?}", i, entry);
+
+            // To traverse the page tables further and take a look at a level 3
+            // table, we can take the mapped frame of an entry and convert it to
+            // a virtual address again.
+
+            // Get the physical address from the entry and convert it.
+            let phys = entry.frame().unwrap().start_address();
+            let virt = phys.as_u64() + boot_info.physical_memory_offset;
+            let ptr = VirtAddr::new(virt).as_mut_ptr();
+            let l3_table: &PageTable = unsafe { &*ptr };
+
+            // Print non-empty entries of the level 3 table.
+            for (i, entry) in l3_table.iter().enumerate() {
+                if !entry.is_unused() {
+                    println!("  L3 Entry {}: {:?}", i, entry);
+                }
+            }
+        }
+    }
 
     // Uncomment lines below to trigger a stack overflow.
     // fn stack_overflow() {
