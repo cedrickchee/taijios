@@ -5,12 +5,16 @@
 #![reexport_test_harness_main = "test_main"] // set the name of the test framework entry function to test_main
 
 use core::panic::PanicInfo;
+use bootloader::{ BootInfo, entry_point };
 use tiny_os::{println, print};
 
-/// This function is the entry point, since the linker looks for a function
-/// named `_start` by default.
-#[no_mangle] // don't mangle the name of this function
-pub extern "C" fn _start() -> ! {
+// To make sure that the entry point function has always the correct signature
+// that the bootloader expects, the `bootloader` crate provides an `entry_point`
+// macro that provides a type-checked way to define a Rust function as the entry
+// point.
+entry_point!(kernel_main);
+
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // Write some characters to the screen.
     print!("H");
     print!("ello ");
@@ -79,3 +83,24 @@ fn panic(info: &PanicInfo) -> ! {
 fn trivial_assertion() {
     assert_eq!(1, 1);
 }
+
+// ********** Sidenote **********
+// 
+// # The `entry_point` macro
+
+// Since our `_start` function is called externally from the bootloader, no
+// checking of our function signature occurs. This means that we could let it
+// take arbitrary arguments without any compilation errors, but it would fail or
+// cause undefined behavior at runtime.
+//
+// To make sure that the entry point function has always the correct signature
+// that the bootloader expects, the `bootloader` crate provides an `entry_point`
+// macro that provides a type-checked way to define a Rust function as the entry
+// point. We rewrite our entry point function to use this macro.
+//
+// We no longer need to use `extern "C"` or `no_mangle` for our entry point, as
+// the macro defines the real lower level `_start` entry point for us. The
+// `kernel_main` function is now a completely normal Rust function, so we can
+// choose an arbitrary name for it. The important thing is that it is
+// type-checked so that a compilation error occurs when we use a wrong function
+// signature.
