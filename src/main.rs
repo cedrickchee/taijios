@@ -15,7 +15,10 @@ use tiny_os::{println, print};
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use x86_64::{ structures::paging::Translate, VirtAddr }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
+    use x86_64::{
+        structures::paging::Page,
+        VirtAddr,
+    }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
     use tiny_os::memory;
     
     // Write some characters to the screen.
@@ -72,6 +75,26 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         // (update: huge page translation now also works.)
     }
     */
+
+    // Create a new mapping for a previously unmapped page.
+    // Until now we only looked at the page tables without modifying anything.
+    
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator = memory::EmptyFrameAllocator;
+    // Map an unused page.
+    // This maps the page to the VGA text buffer frame, so we should see any
+    // write to it on the screen.
+    let page = Page::containing_address(VirtAddr::new(0));
+    memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
+    // Convert the page to a raw pointer.
+    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
+    // Write the string `New!` to the screen through the new mapping.
+    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e) };
+    // Note: We don’t write to the start of the page because the top line of the
+    // VGA buffer is directly shifted off the screen by the next `println`. We
+    // write the value `0x_f021_f077_f065_f04e`, which represents the string
+    // “New!” on white background.
 
     // Uncomment lines below to print the entries of the level 4 page table.    
     // use tiny_os::memory::active_level_4_table;
@@ -197,3 +220,30 @@ fn trivial_assertion() {
 // In our case, the bootloader maps the complete physical memory at a virtual
 // address specified by the `physical_memory_offset` variable, so we can use the
 // `OffsetPageTable` type.
+//
+// # Creating a new mapping
+//
+// We will create a new mapping for a previously unmapped page.
+//
+// We will use the `map_to` function of the `Mapper` trait for our
+// implementation. The frame allocator is needed because mapping the given page
+// might require creating additional page tables, which need unused frames as
+// backing storage.
+//
+// ## Choosing a virtual page
+// 
+// The difficulty of creating a new mapping depends on the virtual page that we
+// want to map. In the easiest case, the level 1 page table for the page already
+// exists and we just need to write a single entry. In the most difficult case,
+// the page is in a memory region for that no level 3 exists yet so that we need
+// to create new level 3, level 2 and level 1 page tables first.
+//
+// For calling our `create_example_mapping` function with the
+// `EmptyFrameAllocator`, we need to choose a page for that all page tables
+// already exist. To find such a page, we can utilize the fact that the
+// bootloader loads itself in the first megabyte of the virtual address space.
+// This means that a valid level 1 table exists for all pages this region. Thus,
+// we can choose any unused page in this memory region for our example mapping,
+// such as the page at address `0`. Normally, this page should stay unused to
+// guarantee that dereferencing a null pointer causes a page fault, so we know
+// that the bootloader leaves it unmapped.

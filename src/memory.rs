@@ -12,8 +12,10 @@
 //!   memory frames for creating new page tables.
 
 use x86_64::{
-    structures::paging::{ PageTable, OffsetPageTable, },
-    VirtAddr,
+    structures::paging::{
+        PageTable, OffsetPageTable, Page, PhysFrame, Mapper, Size4KiB, FrameAllocator,
+    },
+    VirtAddr, PhysAddr,
 };
 
 /// Initialize a new `OffsetPageTable`.
@@ -62,6 +64,59 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr)
     let page_table_ptr: *mut PageTable = virt.as_mut_ptr();
 
     &mut *page_table_ptr // unsafe
+}
+
+/// Creates an example mapping for the given virtual page to frame `0xb8000`,
+/// the physical frame of the VGA text buffer. We choose that frame because it
+/// allows us to easily test if the mapping was created correctly: We just need
+/// to write to the newly mapped page and see whether we see the write appear on
+/// the screen.
+/// 
+/// The `frame_allocator` parameter uses the `impl Trait` syntax to be generic
+/// over all types that implement the `FrameAllocator` trait. The trait is
+/// generic over the `PageSize` trait to work with both standard 4KiB pages and
+/// huge 2MiB/1GiB pages.
+pub fn create_example_mapping(
+    page: Page,
+    mapper: &mut OffsetPageTable,
+    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
+) {
+    use x86_64::structures::paging::PageTableFlags as Flags;
+
+    let frame = PhysFrame::containing_address(PhysAddr::new(0xb8000));
+    // We set the `PRESENT` flag because it is required for all valid entries
+    // and the `WRITABLE` flag to make the mapped page writable.
+    let flags = Flags::PRESENT | Flags::WRITABLE;
+
+    let map_to_result = unsafe {
+        // The `map_to` method is unsafe because the caller must ensure that the
+        // frame is not already in use. The reason for this is that mapping the
+        // same frame twice could result in undefined behavior. In our case, we
+        // reuse the VGA text buffer frame, which is already mapped, so we break
+        // the required condition. However, the create_example_mapping function
+        // is only a temporary testing function and will be removed after this
+        // post, so it is OK.
+
+        // FIXME: this is not safe, we do it only for testing.
+        mapper.map_to(page, frame, flags, frame_allocator)
+        // Note: The `map_to` function can fail, so it returns a `Result`. Since
+        // this is just some example code that does not need to be robust, we
+        // just use `expect` to panic when an error occurs. On success, the
+        // function returns a `MapperFlush` type that provides an easy way to
+        // flush the newly mapped page from the translation lookaside buffer
+        // (TLB) with its `flush` method.
+    };
+    map_to_result.expect("map_to failed").flush();
+}
+
+/// A simple case and assume that we don’t need to create new page tables.
+/// For this case, a `FrameAllocator` that always returns `None`.
+pub struct EmptyFrameAllocator;
+
+unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame> {
+        None
+    }
 }
 
 /*
