@@ -15,8 +15,8 @@ use tiny_os::{println, print};
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use x86_64::VirtAddr;
-    use tiny_os::memory::translate_addr;
+    use x86_64::{ structures::paging::Translate, VirtAddr }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
+    use tiny_os::memory;
     
     // Write some characters to the screen.
     print!("H");
@@ -29,7 +29,12 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // Access the page tables.
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     
-    // Test our memory translation function by translating some addresses.
+    // Test memory translation by translating some addresses using
+    // `OffsetPageTable` type from the `x86_64` crate.
+
+    // Initialize a Mapper.
+    let mapper = unsafe { memory::init(phys_mem_offset) };
+
     let addresses = [
         // The identity-mapped vga buffer page.
         0xb8000,
@@ -43,7 +48,12 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     for &address in &addresses {
         let virt = VirtAddr::new(address);
-        let phys = unsafe { translate_addr(virt, phys_mem_offset) };
+        // Use the `Translate::translate_addr` method (from the `x86_64` crate)
+        // instead of our own `memory::translate_addr` function.
+        let phys = mapper.translate_addr(virt);
+
+        // Old code: Uncomment line below to use our memory translation function.
+        //let phys = unsafe { translate_addr(virt, phys_mem_offset) };
         println!("{:?} -> {:?}", virt, phys);
         // As expected, the identity-mapped address `0xb8000` translates to the
         // same physical address. The code page and the stack page translate to
@@ -59,6 +69,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         // address `0`. However, the translation fails because the mapping uses
         // huge pages for efficiency, which is not supported in our
         // implementation yet.
+        // (update: huge page translation now also works.)
     }
 
     // Uncomment lines below to print the entries of the level 4 page table.    
@@ -153,7 +164,7 @@ fn trivial_assertion() {
 // ********** Sidenote **********
 // 
 // # The `entry_point` macro
-
+//
 // Since our `_start` function is called externally from the bootloader, no
 // checking of our function signature occurs. This means that we could let it
 // take arbitrary arguments without any compilation errors, but it would fail or
@@ -170,3 +181,18 @@ fn trivial_assertion() {
 // choose an arbitrary name for it. The important thing is that it is
 // type-checked so that a compilation error occurs when we use a wrong function
 // signature.
+//
+// # Using `OffsetPageTable`
+// 
+// Translating virtual to physical addresses is a common task in an OS kernel,
+// therefore the `x86_64` crate provides an abstraction for it. The
+// implementation already supports huge pages and several other page table
+// functions apart from `translate_addr`, so we will use it in the following
+// instead of adding huge page support to our own implementation.
+//
+// The `OffsetPageTable` type assumes that the complete physical memory is
+// mapped to the virtual address space at some offset.
+//
+// In our case, the bootloader maps the complete physical memory at a virtual
+// address specified by the `physical_memory_offset` variable, so we can use the
+// `OffsetPageTable` type.
