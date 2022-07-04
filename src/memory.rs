@@ -13,7 +13,7 @@
 
 use x86_64::{
     structures::paging::{ PageTable, OffsetPageTable, },
-    VirtAddr, PhysAddr,
+    VirtAddr,
 };
 
 /// Initialize a new `OffsetPageTable`.
@@ -63,6 +63,8 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr)
 
     &mut *page_table_ptr // unsafe
 }
+
+/*
 
 /// Translates the given virtual address to the mapped physical address, or
 /// `None` if the address is not mapped.
@@ -127,3 +129,5 @@ fn translate_addr_inner(addr: VirtAddr, physical_memory_offset: VirtAddr)
     // Calculate the physical address by adding the page offset.
     Some(frame.start_address() + u64::from(addr.page_offset()))
 }
+
+*/
