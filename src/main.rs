@@ -19,7 +19,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         structures::paging::Page,
         VirtAddr,
     }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
-    use tiny_os::memory;
+    use tiny_os::memory::{ self, BootInfoFrameAllocator };
     
     // Write some characters to the screen.
     print!("H");
@@ -81,7 +81,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
-    let mut frame_allocator = memory::EmptyFrameAllocator;
+    // With the `BootInfoFrameAllocator`, behind the scenes, the `map_to` method
+    // creates the missing page tables.
+    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
     // Map an unused page.
     // This maps the page to the VGA text buffer frame, so we should see any
     // write to it on the screen.
@@ -187,6 +189,25 @@ fn trivial_assertion() {
 
 // ********** Sidenote **********
 // 
+// # Boot information
+//
+// The `bootloader` crate defines a `BootInfo` struct that contains all the
+// information it passes to our kernel. With the `map_physical_memory` feature
+// enabled, it currently has the two fields `memory_map` and
+// `physical_memory_offset`:
+//
+// - The `memory_map` field contains an overview of the available physical
+//   memory. This tells our kernel how much physical memory is available in the
+//   system and which memory regions are reserved for devices such as the VGA
+//   hardware. The memory map can be queried from the BIOS or UEFI firmware, but
+//   only very early in the boot process. For this reason, it must be provided
+//   by the bootloader because there is no way for the kernel to retrieve it
+//   later.
+// - The `physical_memory_offset` tells us the virtual start address of the
+//   physical memory mapping. By adding this offset to a physical address, we
+//   get the corresponding virtual address. This allows us to access arbitrary
+//   physical memory from our kernel.
+//
 // # The `entry_point` macro
 //
 // Since our `_start` function is called externally from the bootloader, no

@@ -17,6 +17,7 @@ use x86_64::{
     },
     VirtAddr, PhysAddr,
 };
+use bootloader::bootinfo::{ MemoryMap, MemoryRegionType };
 
 /// Initialize a new `OffsetPageTable`.
 ///
@@ -119,6 +120,78 @@ unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
     }
 }
 
+/// A `FrameAllocator` that returns usable frames from the bootloader's memory
+/// map.
+pub struct BootInfoFrameAllocator {
+    /// A `'static` reference to the memory map passed by the bootloader.
+    memory_map: &'static MemoryMap,
+    /// Keeps track of number of the next frame that the allocator should
+    /// return.
+    next: usize,
+}
+
+impl BootInfoFrameAllocator {
+    /// Create a `FrameAllocator` from the passed memory map.
+    ///
+    /// This function is unsafe because the caller must guarantee that the
+    /// passed memory map is valid. The main requirement is that all frames that
+    /// are marked as `USABLE` in it are really unused.
+    pub unsafe fn init(memory_map: &'static MemoryMap) -> Self {
+        BootInfoFrameAllocator {
+            memory_map,
+            // Initialized with 0 and will be increased for every frame
+            // allocation to avoid returning the same frame twice.
+            next: 0,
+        }
+    }
+
+    /// An auxiliary method that returns an iterator over the usable frames
+    /// specified in the memory map.
+    fn usable_frames(&self) -> impl Iterator<Item = PhysFrame> {
+        // Get usable regions from memory map.
+        //
+        // Note: The `iter` method convert the memory map to an iterator of
+        // `MemoryRegions`. The `filter` method to skip any reserved or
+        // otherwise unavailable regions. The bootloader updates the memory map
+        // for all the mappings it creates, so frames that are used by our
+        // kernel (code, data or stack) or to store the boot information are
+        // already marked as InUse or similar. Thus we can be sure that Usable
+        // frames are not used somewhere else.
+        let regions = self.memory_map.iter();
+        let usable_regions = regions
+            .filter(|r| r.region_type == MemoryRegionType::Usable);
+        // Map each region to its address range.
+        //
+        // Note: `map` combinator transform our iterator of memory regions to an
+        // iterator of address ranges.
+        //
+        // `start_addr` method returns the physical start address of the memory
+        // region.
+        let addr_ranges = usable_regions
+            .map(|r| r.range.start_addr()..r.range.end_addr());
+        // Transform to an iterator of frame start addresses.
+        //
+        // Note: `flat_map` to transform the address ranges into an iterator of
+        // frame start addresses, choosing every 4096th address using `step_by`.
+        // Since 4096 bytes (= 4 KiB) is the page size, we get the start address
+        // of each frame. The bootloader page aligns all usable memory areas so
+        // that we don’t need any alignment or rounding code here.
+        let frame_addresses = addr_ranges.flat_map(|r| r.step_by(4096));
+        // Create `PhysFrame` types from the start addresses.
+        frame_addresses.map(|addr| PhysFrame::containing_address(PhysAddr::new(addr)))
+    }
+}
+
+unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
+    fn allocate_frame(&mut self) -> Option<PhysFrame> {
+        let frame = self.usable_frames().nth(self.next);
+        // Before returning that frame, we increase `self.next` by one so that
+        // we return the following frame on the next call.
+        self.next += 1;
+        frame
+    }
+}
+
 /*
 
 /// Translates the given virtual address to the mapped physical address, or
@@ -186,3 +259,37 @@ fn translate_addr_inner(addr: VirtAddr, physical_memory_offset: VirtAddr)
 }
 
 */
+
+// ********** Sidenote **********
+// 
+// # Allocating frames
+//
+// The memory map is passed by the bootloader. It is provided by the BIOS/UEFI
+// firmware. It can only be queried very early in the boot process, so the
+// bootloader already calls the respective functions for us.
+//
+// The memory map is a map of the physical memory regions of the underlying
+// machine. Thus it consists of a list of `MemoryRegion` structs, which contain
+// the start address, the length, and the type (e.g. unused, reserved, etc.) of
+// each memory region.
+//
+// ## Implementing the `FrameAllocator` trait
+//
+// This implementation is not quite optimal since it recreates the
+// `usable_frame` allocator on every allocation. It would be better to directly
+// store the iterator as a struct field instead. Then we wouldn’t need the `nth`
+// method and could just call `next` on every allocation. The problem with this
+// approach is that it’s not possible to store an `impl Trait` type in a struct
+// field currently. It might work someday when [named existential
+// types](https://github.com/rust-lang/rfcs/pull/2071) are fully implemented.
+//
+// With the boot info frame allocator, the mapping succeeds. Behind the scenes,
+// the `map_to` method creates the missing page tables in the following way:
+// - Allocate an unused frame from the passed `frame_allocator`.
+// - Zero the frame to create a new, empty page table.
+// - Map the entry of the higher level table to that frame.
+// - Continue with the next table level.
+//
+// While our `create_example_mapping` function is just some example code, we are
+// now able to create new mappings for arbitrary pages. This will be essential
+// for allocating memory or implementing multithreading in future.
