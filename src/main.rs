@@ -26,7 +26,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     tiny_os::init();
 
-    // Access the page tables.
+    /* Uncomment lines below to access the page tables.
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     
     // Test memory translation by translating some addresses using
@@ -71,6 +71,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         // implementation yet.
         // (update: huge page translation now also works.)
     }
+    */
 
     // Uncomment lines below to print the entries of the level 4 page table.    
     // use tiny_os::memory::active_level_4_table;
