@@ -262,6 +262,37 @@ fn translate_addr_inner(addr: VirtAddr, physical_memory_offset: VirtAddr)
 
 // ********** Sidenote **********
 // 
+// # Intro
+//
+// We found out that the bootloader already set up a page table hierarchy for
+// our kernel, which means that our kernel already runs on virtual addresses.
+// This improves safety since illegal memory accesses cause page fault
+// exceptions instead of modifying arbitrary physical memory.
+//
+// The problem now is that we can’t access the page tables from our kernel
+// because they are stored in physical memory and our kernel already runs on
+// virtual addresses. We continue at this point and explores different
+// approaches of making the page table frames accessible to our kernel.
+//
+// # Questions
+//
+// How can we access page table from our kernel?
+//
+// Accessing physical memory directly is not possible when paging is active,
+// since programs could easily circumvent memory protection and access memory of
+// other programs otherwise. So the only way to access the table is through some
+// virtual page that is mapped to the physical frame at address 0x1000. This
+// problem of creating mappings for page table frames is a general problem,
+// since the kernel needs to access the page tables regularly, for example when
+// allocating a stack for a new thread.
+//
+// How to implement support for paging in our kernel?
+//
+// There are different ways to access physical memory from our kernel, which
+// makes it possible to access the page tables that our kernel runs on. At this
+// point we are able to implement functions for translating virtual to physical
+// addresses and for creating new mappings in the page tables.
+//
 // # Allocating frames
 //
 // The memory map is passed by the bootloader. It is provided by the BIOS/UEFI
