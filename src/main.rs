@@ -14,12 +14,12 @@ use tiny_os::{println, print};
 // point.
 entry_point!(kernel_main);
 
-fn kernel_main(boot_info: &'static BootInfo) -> ! {
-    use x86_64::{
-        structures::paging::Page,
-        VirtAddr,
-    }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
-    use tiny_os::memory::{ self, BootInfoFrameAllocator };
+fn kernel_main(_boot_info: &'static BootInfo) -> ! {
+    // use x86_64::{
+    //     structures::paging::Page,
+    //     VirtAddr,
+    // }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
+    // use tiny_os::memory::{ self, BootInfoFrameAllocator };
     
     // Write some characters to the screen.
     print!("H");
