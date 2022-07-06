@@ -7,6 +7,7 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)] // to use the `x86-interrupt` calling convention anyway (which is still unstable).
+#![feature(alloc_error_handler)] // the `alloc_error_handler` fn is still unstable, so we need a feature gate to enable it.
 
 extern crate alloc; // add a dependency on the built-in alloc crate
 use core::panic::PanicInfo;
@@ -16,6 +17,7 @@ pub mod serial;
 pub mod interrupts;
 pub mod gdt;
 pub mod memory;
+pub mod allocator;
 
 /// A central place for initialization routines.
 pub fn init() {
@@ -149,4 +151,13 @@ fn panic(info: &PanicInfo) -> ! {
 fn test_breakpoint_exception() {
     // Invoke a breakpoint exception.
     x86_64::instructions::interrupts::int3();
+}
+
+// The attribute specifies a function that is called when an allocation error
+// occurs.
+#[alloc_error_handler]
+fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+    // There’s nothing we can do to resolve the failure, so we just panic with a
+    // message that contains the `Layout` instance.
+    panic!("allocation error: {:?}", layout)
 }
