@@ -4,8 +4,11 @@
 #![test_runner(tiny_os::test_runner)]
 #![reexport_test_harness_main = "test_main"] // set the name of the test framework entry function to test_main
 
+extern crate alloc;
+
 use core::panic::PanicInfo;
 use bootloader::{ BootInfo, entry_point };
+use alloc::boxed::Box;
 use tiny_os::{println, print};
 
 // To make sure that the entry point function has always the correct signature
@@ -14,12 +17,12 @@ use tiny_os::{println, print};
 // point.
 entry_point!(kernel_main);
 
-fn kernel_main(_boot_info: &'static BootInfo) -> ! {
-    // use x86_64::{
-    //     structures::paging::Page,
-    //     VirtAddr,
-    // }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
-    // use tiny_os::memory::{ self, BootInfoFrameAllocator };
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use x86_64::{
+        // structures::paging::Page,
+        VirtAddr,
+    }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
+    use tiny_os::memory::{ self, BootInfoFrameAllocator };
     
     // Write some characters to the screen.
     print!("H");
@@ -28,6 +31,20 @@ fn kernel_main(_boot_info: &'static BootInfo) -> ! {
     println!("The numbers are {} and {}", 42, 1.0/3.0);
 
     tiny_os::init();
+
+    // Use the allocation and collection types of `alloc`.
+    // For example we can use a `Box` to allocate a value on the heap.
+    
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
+
+    let x = Box::new(42);
+    // When we run the above code, we see that our `alloc_error_handler`
+    // function is called because the `Box::new` function implicitly calls the
+    // `alloc` function of the global allocator. Our dummy allocator always
+    // returns a null pointer, so every allocation fails. To fix this we need to
+    // create an allocator that actually returns usable memory.
 
     /* Uncomment lines below to access the page tables.
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
