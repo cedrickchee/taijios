@@ -23,6 +23,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         VirtAddr,
     }; // need to import the `Translate` trait in order to use the `translate_addr` method it provides.
     use tiny_os::memory::{ self, BootInfoFrameAllocator };
+    use tiny_os::allocator;
     
     // Write some characters to the screen.
     print!("H");
@@ -38,6 +39,11 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
+
+    allocator::init_heap(&mut mapper, &mut frame_allocator)
+        .expect("heap initialization failed");
+        // in case the fn returns an error, we panic using the `expect` method
+        // since there is currently no sensible way for us to handle this error.
 
     let x = Box::new(42);
     // When we run the above code, we see that our `alloc_error_handler`

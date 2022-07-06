@@ -9,11 +9,83 @@
 
 use alloc::alloc::{ GlobalAlloc, Layout };
 use core::ptr::null_mut;
+use x86_64::{
+    structures::paging::{
+        Mapper, Size4KiB, FrameAllocator, Page, PageTableFlags,
+        mapper::MapToError,
+    },
+    VirtAddr,
+};
+
+// We can choose any virtual address range that we like, as long as it is not
+// already used for a different memory region.
+pub const HEAP_START: usize = 0x_4444_4444_0000;
+// If we need more space in the future, we can simply increase it.
+pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
 
 // The attribute tells the Rust compiler which allocator instance it should use
 // as the global heap allocator.
 #[global_allocator]
 static ALLOCATOR: Dummy = Dummy;
+
+/// Creates a heap memory region from which the allocator can allocate memory.
+///
+/// We define a virtual memory range for the heap region and then map this
+/// region to physical frames.
+/// 
+/// Maps the heap pages using the Mapper API implementation
+/// (`structures::paging::OffsetPageTable`) in the `memory` module.
+pub fn init_heap(
+    mapper: &mut impl Mapper<Size4KiB>,
+    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
+) -> Result<(), MapToError<Size4KiB>> {
+    // Creating the page range.
+    // 
+    // To create a range of the pages that we want to map, we convert the
+    // HEAP_START pointer to a VirtAddr type. Then we calculate the heap end
+    // address from it by adding the HEAP_SIZE. We want an inclusive bound (the
+    // address of the last byte of the heap), so we subtract 1. Next, we convert
+    // the addresses into Page types using the containing_address function.
+    // Finally, we create a page range from the start and end pages using the
+    // Page::range_inclusive function.
+    let page_range = {
+        let heap_start = VirtAddr::new(HEAP_START as u64);
+        let heap_end = heap_start + HEAP_SIZE - 1u64;
+        let heap_start_page = Page::containing_address(heap_start);
+        let heap_end_page = Page::containing_address(heap_end);
+        Page::range_inclusive(heap_start_page, heap_end_page)
+    };
+
+    // Mapping the pages.
+    //
+    // For each page, we do the following:
+    //
+    // - We allocate a physical frame that the page should be mapped to using
+    //   the FrameAllocator::allocate_frame method. This method returns None
+    //   when there are no more frames left. We deal with that case by mapping
+    //   it to a MapToError::FrameAllocationFailed error through the
+    //   Option::ok_or method and then apply the question mark operator to
+    //   return early in the case of an error.
+    // - We set the required PRESENT flag and the WRITABLE flag for the page.
+    //   With these flags both read and write accesses are allowed, which makes
+    //   sense for heap memory.
+    // - We use the Mapper::map_to method for creating the mapping in the active
+    //   page table. The method can fail, therefore we use the question mark
+    //   operator again to forward the error to the caller. On success, the
+    //   method returns a MapperFlush instance that we can use to update the
+    //   translation lookaside buffer using the flush method.
+    for page in page_range {
+        let frame = frame_allocator
+            .allocate_frame()
+            .ok_or(MapToError::FrameAllocationFailed)?;
+        let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
+        unsafe {
+            mapper.map_to(page, frame, flags, frame_allocator)?.flush()
+        }
+    }
+
+    Ok(())
+}
 
 /// Dummy allocator
 ///
