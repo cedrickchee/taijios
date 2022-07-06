@@ -16,6 +16,7 @@ use x86_64::{
     },
     VirtAddr,
 };
+use linked_list_allocator::LockedHeap;
 
 // We can choose any virtual address range that we like, as long as it is not
 // already used for a different memory region.
@@ -26,7 +27,7 @@ pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
 // The attribute tells the Rust compiler which allocator instance it should use
 // as the global heap allocator.
 #[global_allocator]
-static ALLOCATOR: Dummy = Dummy;
+static ALLOCATOR: LockedHeap = LockedHeap::empty(); // create a static allocator
 
 /// Creates a heap memory region from which the allocator can allocate memory.
 ///
@@ -84,6 +85,20 @@ pub fn init_heap(
         }
     }
 
+    // Initialize the allocator after creating the heap.
+    unsafe {
+        // We use the `lock` method on the inner spinlock of the `LockedHeap`
+        // type to get an exclusive reference to the wrapped
+        // [`Heap`](https://docs.rs/linked_list_allocator/0.9.0/linked_list_allocator/struct.Heap.html)
+        // instance, on which we then call the `init` method with the heap bounds
+        // as arguments.
+        ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE);
+        // ********** Sidenote **********
+        // It is important that we initialize the heap _after_ mapping the heap
+        // pages, since the `init` function already tries to write to the heap
+        // memory.
+    }
+
     Ok(())
 }
 
@@ -122,3 +137,22 @@ unsafe impl GlobalAlloc for Dummy {
 // is special because it is almost never used directly by the programmer.
 // Instead, the compiler will automatically insert the appropriate calls to the
 // trait methods when using the allocation and collection types of `alloc`.
+//
+// # Using an allocator crate
+//
+// Since implementing an allocator is somewhat complex, we start by using an
+// external allocator crate. We will implement our own allocator later.
+//
+// A simple allocator crate for `no_std` applications is the
+// [linked_list_allocator](https://github.com/phil-opp/linked-list-allocator/)
+// crate. It’s name comes from the fact that it uses a linked list data
+// structure to keep track of deallocated memory regions.
+//
+// `use linked_list_allocator::LockedHeap;` The struct is named `LockedHeap`
+// because it uses the `spinning_top::Spinlock` type for synchronization.
+//
+// Setting the `LockedHeap` as global allocator is not enough. The reason is
+// that we use the `empty` constructor function, which creates an allocator
+// without any backing memory. Like our dummy allocator, it always returns an
+// error on `alloc`. To fix this, we need to initialize the allocator after
+// creating the heap.

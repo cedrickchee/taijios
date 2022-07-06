@@ -8,7 +8,7 @@ extern crate alloc;
 
 use core::panic::PanicInfo;
 use bootloader::{ BootInfo, entry_point };
-use alloc::boxed::Box;
+use alloc::{ boxed::Box, vec, vec::Vec, rc::Rc };
 use tiny_os::{println, print};
 
 // To make sure that the entry point function has always the correct signature
@@ -33,8 +33,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     tiny_os::init();
 
-    // Use the allocation and collection types of `alloc`.
-    // For example we can use a `Box` to allocate a value on the heap.
+    // After initializing the heap, we can now use all allocation and collection
+    // types of the built-in `alloc` crate without error.
     
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
@@ -45,12 +45,22 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         // in case the fn returns an error, we panic using the `expect` method
         // since there is currently no sensible way for us to handle this error.
 
-    let x = Box::new(42);
-    // When we run the above code, we see that our `alloc_error_handler`
-    // function is called because the `Box::new` function implicitly calls the
-    // `alloc` function of the global allocator. Our dummy allocator always
-    // returns a null pointer, so every allocation fails. To fix this we need to
-    // create an allocator that actually returns usable memory.
+    // allocate a number on the heap
+    let heap_value = Box::new(42);
+    println!("heap_value at {:p}", heap_value); // print the underlying heap pointer
+    // create a dynamically sized vector
+    let mut vec = Vec::new();
+    for i in 0..500 {
+        vec.push(i);
+    }
+    println!("vec at {:p}", vec.as_slice());
+
+    // create a reference counted vector -> will be freed when count reaches 0
+    let reference_counted = Rc::new(vec![1, 2, 3]);
+    let cloned_reference = reference_counted.clone();
+    println!("current reference count is {}", Rc::strong_count(&cloned_reference));
+    core::mem::drop(reference_counted);
+    println!("reference count is {} now", Rc::strong_count(&cloned_reference));
 
     /* Uncomment lines below to access the page tables.
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
@@ -295,3 +305,25 @@ fn trivial_assertion() {
 // such as the page at address `0`. Normally, this page should stay unused to
 // guarantee that dereferencing a null pointer causes a page fault, so we know
 // that the bootloader leaves it unmapped.
+//
+// # Heap allocation
+//
+// ## Using an allocator crate
+//
+// The allocation and collection types of the built-in `alloc` crate is now
+// available to our kernel.
+//
+// When we run our kernel, as expected, we see that the `Box` and `Vec` values
+// live on the heap, as indicated by the pointer starting with the
+// `0x_4444_4444_*` prefix. The reference counted value also behaves as
+// expected, with the reference count being 2 after the `clone` call, and 1
+// again after one of the instances was dropped.
+//
+// The reason that the vector starts at offset `0x800` is not that the boxed
+// value is 0x800 bytes large, but the [reallocations][realloc] that occur when the vector
+// needs to increase its capacity. For example, when the vector’s capacity is 32
+// and we try to add the next element, the vector allocates a new backing array
+// with capacity 64 behind the scenes and copies all elements over. Then it
+// frees the old allocation.
+//
+// [realloc]: https://doc.rust-lang.org/alloc/vec/struct.Vec.html#capacity-and-reallocation
