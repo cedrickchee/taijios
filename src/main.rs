@@ -76,6 +76,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     }
     */
 
+    /* Uncomment lines below to allocate frames and create new page mapping.
+
     // Create a new mapping for a previously unmapped page.
     // Until now we only looked at the page tables without modifying anything.
     
@@ -97,6 +99,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // VGA buffer is directly shifted off the screen by the next `println`. We
     // write the value `0x_f021_f077_f065_f04e`, which represents the string
     // “New!” on white background.
+    
+    */
 
     // Uncomment lines below to print the entries of the level 4 page table.    
     // use tiny_os::memory::active_level_4_table;

@@ -67,6 +67,8 @@ unsafe fn active_level_4_table(physical_memory_offset: VirtAddr)
     &mut *page_table_ptr // unsafe
 }
 
+/*
+
 /// Creates an example mapping for the given virtual page to frame `0xb8000`,
 /// the physical frame of the VGA text buffer. We choose that frame because it
 /// allows us to easily test if the mapping was created correctly: We just need
@@ -109,6 +111,7 @@ pub fn create_example_mapping(
     };
     map_to_result.expect("map_to failed").flush();
 }
+*/
 
 /// A simple case and assume that we don’t need to create new page tables.
 /// For this case, a `FrameAllocator` that always returns `None`.
