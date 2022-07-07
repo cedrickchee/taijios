@@ -25,6 +25,11 @@ pub struct BumpAllocator {
 
 impl BumpAllocator {
     /// Creates a new empty bump allocator.
+    /// 
+    /// It is important that we declared `new` as const function. If they were
+    /// normal functions, a compilation error would occur because the
+    /// initialization expression of a `static` (the place where it will be
+    /// used) must evaluable at compile time.
     pub const fn new() -> Self {
         BumpAllocator {
             heap_start: 0,
