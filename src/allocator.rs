@@ -18,6 +18,8 @@ use x86_64::{
 };
 use linked_list_allocator::LockedHeap;
 
+pub mod bump;
+
 // We can choose any virtual address range that we like, as long as it is not
 // already used for a different memory region.
 pub const HEAP_START: usize = 0x_4444_4444_0000;
@@ -127,6 +129,51 @@ unsafe impl GlobalAlloc for Dummy {
         // should never occur. For this reason we simply panic here.
         panic!("dealloc should be never called")
     }
+}
+
+/// A generic wrapper around `spin::Mutex` to permit trait implementations.
+/// 
+/// It imposes no restrictions on the wrapped type `A`, so it can be used to
+/// wrap all kinds of types, not just allocators.
+pub struct Locked<A> {
+    inner: spin::Mutex<A>,
+}
+
+impl<A> Locked<A> {
+    /// A constructor function that wraps a given value.
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+    
+    /// A convenience function that calls lock on the wrapped `Mutex`.
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
+    }
+}
+
+/// Align the given address `addr` upwards to alignment `align`.
+///
+/// Requires that `align` is a power of two.
+fn align_up(addr: usize, align: usize) -> usize {
+    // let remainder = addr % align;
+    // if remainder == 0 {
+    //     addr // addr already aligned with the given alignment
+    // } else {
+    //     // Align the address by subtracting the remainder (so that the new
+    //     // remainder is 0) and then adding the alignment (so that the address
+    //     // does not become smaller than the original address).
+    //     addr - remainder + align
+    // }
+
+    // Note that this isn't the most efficient way to implement this function. A
+    // much faster implementation below:
+
+    // Create a bitmask to align the address in a very efficient way.
+    (addr + align - 1) & !(align - 1)
+    // the `!` operator is bitwise NOT.
+    // the `&` operator is bitwise AND.
 }
 
 // ********** Sidenote **********
