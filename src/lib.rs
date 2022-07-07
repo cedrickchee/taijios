@@ -8,6 +8,7 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)] // to use the `x86-interrupt` calling convention anyway (which is still unstable).
 #![feature(alloc_error_handler)] // the `alloc_error_handler` fn is still unstable, so we need a feature gate to enable it.
+#![feature(const_mut_refs)] // use of mutable references in const functions is unstable.
 
 extern crate alloc; // add a dependency on the built-in alloc crate
 use core::panic::PanicInfo;
