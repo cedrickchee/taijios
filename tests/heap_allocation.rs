@@ -109,12 +109,21 @@ fn many_boxes_long_lived() {
 // When we try run `many_boxes_long_lived` test, we see that it fails.
 //
 // Why this failure occurs in detail: First, the `long_lived` allocation is
-// created at the start of the heap, thereby increasing the `allocations` counter
-// by 1. For each iteration of the loop, a short lived allocation is created and
-// directly freed again before the next iteration starts. This means that the
-// `allocations` counter is temporarily increased to 2 at the beginning of an
-// iteration and decreased to 1 at the end of it. The problem now is that the
-// bump allocator can only reuse memory when all `allocations` have been freed,
-// i.e. the `allocations` counter falls to 0. Since this doesn’t happen before the
-// end of the loop, each loop iteration allocates a new region of memory,
-// leading to an out-of-memory error after a number of iterations.
+// created at the start of the heap, thereby increasing the `allocations`
+// counter by 1. For each iteration of the loop, a short lived allocation is
+// created and directly freed again before the next iteration starts. This means
+// that the `allocations` counter is temporarily increased to 2 at the beginning
+// of an iteration and decreased to 1 at the end of it. The problem now is that
+// the bump allocator can only reuse memory when all `allocations` have been
+// freed, i.e. the `allocations` counter falls to 0. Since this doesn’t happen
+// before the end of the loop, each loop iteration allocates a new region of
+// memory, leading to an out-of-memory error after a number of iterations.
+//
+// # Linked List Allocator
+//
+// When we run our `heap_allocation` tests again, we see that all tests pass
+// now, including the `many_boxes_long_lived` test that failed with the bump
+// allocator.
+//
+// This shows that our linked list allocator is able to reuse freed memory for
+// subsequent allocations.
