@@ -277,3 +277,50 @@ unsafe impl GlobalAlloc for Locked<FixedSizeBlockAllocator> {
 // 
 // For our implementation, we will allocate new blocks from the fallback
 // allocator since the implementation is much simpler.
+//
+// ## Tradeoffs
+//
+// While the fixed-size block approach has a much better performance than the
+// linked list approach, it wastes up to half of the memory when using powers of
+// 2 as block sizes. Whether this tradeoff is worth it heavily depends on the
+// application type. For an operating system kernel, where performance is
+// critical, the fixed-size block approach seems to be the better choice.
+//
+// ## Improvements
+//
+// On the implementation side, there are various things that we could improve in
+// our current implementation:
+// - Instead of only allocating blocks lazily using the fallback allocator, it
+//   might be better to pre-fill the lists to improve the performance of initial
+//   allocations.
+// - To simplify the implementation, we only allowed block sizes that are powers
+//   of 2 so that we could use them also as the block alignment. By storing (or
+//   calculating) the alignment in a different way, we could also allow
+//   arbitrary other block sizes. This way, we could add more block sizes, e.g.
+//   for common allocation sizes, in order to minimize the wasted memory.
+// - We currently only create new blocks, but never free them again. This
+//   results in fragmentation and might eventually result in allocation failure
+//   for large allocations. It might make sense to enforce a maximum list length
+//   for each block size. When the maximum length is reached, subsequent
+//   deallocations are freed using the fallback allocator instead of being added
+//   to the list.
+// - Instead of falling back to a linked list allocator, we could have a special
+//   allocator for allocations greater than 4KiB. The idea is to utilize paging,
+//   which operates on 4KiB pages, to map a continuous block of virtual memory
+//   to non-continuous physical frames. This way, fragmentation of unused memory
+//   is no longer a problem for large allocations.
+// - With such a page allocator, it might make sense to add block sizes up to
+//   4KiB and drop the linked list allocator completely. The main advantages of
+//   this would be reduced fragmentation and improved performance
+//   predictability, i.e. better worse-case performance.
+//
+// It’s important to note that the implementation improvements outlined above
+// are only suggestions. Allocators used in operating system kernels are
+// typically highly optimized to the specific workload of the kernel, which is
+// only possible through extensive profiling.
+//
+// ### Variations
+//
+// There are also many variations of the fixed-size block allocator design. Two
+// popular examples are the _slab allocator_ and the _buddy allocator_, which
+// are also used in popular kernels such as Linux.
