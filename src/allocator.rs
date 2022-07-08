@@ -17,7 +17,8 @@ use x86_64::{
     VirtAddr,
 };
 // use bump::BumpAllocator;
-use linked_list::LinkedListAllocator;
+//use linked_list::LinkedListAllocator;
+use fixed_size_block::FixedSizeBlockAllocator;
 
 pub mod bump;
 pub mod linked_list;
@@ -32,7 +33,8 @@ pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
 // The attribute tells the Rust compiler which allocator instance it should use
 // as the global heap allocator.
 #[global_allocator]
-static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new());
+static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(FixedSizeBlockAllocator::new());
+//static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new());
 // static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());
 // static ALLOCATOR: LockedHeap = LockedHeap::empty(); // create a static allocator
 
