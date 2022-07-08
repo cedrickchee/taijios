@@ -21,6 +21,7 @@ use linked_list::LinkedListAllocator;
 
 pub mod bump;
 pub mod linked_list;
+pub mod fixed_size_block;
 
 // We can choose any virtual address range that we like, as long as it is not
 // already used for a different memory region.
