@@ -219,6 +219,26 @@ fn panic(info: &PanicInfo) -> ! {
     tiny_os::test_panic_handler(info)
 }
 
+// Add support for cooperative multitasking based on futures and async/await
+// works in Rust to our kernel.
+
+// The function is an `async fn`, so the compiler transforms it into a state
+// machine that implements `Future`. Since the function only returns `89`, the
+// resulting future will directly return `Poll::Ready(89)` on the first `poll`
+// call.
+async fn async_number() -> u32 {
+    89
+}
+
+// Like `async_number`, the `example_task` function is also an `async fn`. It
+// awaits the number returned by `async_number` and then prints it using the
+// `println` macro.
+async fn example_task() {
+    let number = async_number().await;
+    println!("async number: {}", number);
+}
+
+
 #[test_case]
 fn trivial_assertion() {
     assert_eq!(1, 1);
