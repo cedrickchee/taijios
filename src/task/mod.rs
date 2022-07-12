@@ -7,6 +7,8 @@ use core::{
 };
 use alloc::boxed::Box;
 
+pub mod simple_executor;
+
 // A newtype wrapper around a pinned, heap allocated, and dynamically dispatched
 // future with the empty type `()` as output.
 pub struct Task {
