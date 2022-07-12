@@ -9,7 +9,8 @@ extern crate alloc;
 use core::panic::PanicInfo;
 use bootloader::{ BootInfo, entry_point };
 use alloc::{ boxed::Box, vec, vec::Vec, rc::Rc };
-use tiny_os::{println, print};
+use tiny_os::{println, print, Testable};
+use tiny_os::task::{ Task, simple_executor::SimpleExecutor };
 
 // To make sure that the entry point function has always the correct signature
 // that the bootloader expects, the `bootloader` crate provides an `entry_point`
@@ -196,6 +197,29 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // unsafe { *ptr = 42; }
     // println!("write worked");
 
+    // Cooperative multitasking based on futures and async/await in Rust.
+
+    // An example of running the task returned by the `example_task` function.
+
+    // A new instance of our `SimpleExecutor` type is created with an empty
+    // `task_queue`.
+    let mut executor = SimpleExecutor::new();
+    // Call the asynchronous `example_task` function, which returns a future. We
+    // wrap this future in the `Task` type, which moves it to the heap and pins
+    // it, and then add the task to the `task_queue` of the executor through the
+    // `spawn` method.
+    executor.spawn(Task::new(example_task()));
+    // Start the execution of the single task in the queue.
+    // 
+    // Since the `example_task` does not wait for anything, it can directly run
+    // till its end on the first `poll` call. This is where the _"async number:
+    // 89"_ line is printed. Since the `example_task` directly returns
+    // `Poll::Ready`, it is not added back to the task queue.
+    //
+    // The `run` method returns after the `task_queue` becomes empty. The
+    // execution of our `kernel_main` function continues.
+    executor.run();
+
     // Call the renamed test framework entry function.
     #[cfg(test)] // use conditional compilation to add the call to `test_main` only in test contexts.
     test_main();
@@ -237,7 +261,6 @@ async fn example_task() {
     let number = async_number().await;
     println!("async number: {}", number);
 }
-
 
 #[test_case]
 fn trivial_assertion() {
