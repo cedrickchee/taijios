@@ -19,6 +19,7 @@ pub mod interrupts;
 pub mod gdt;
 pub mod memory;
 pub mod allocator;
+pub mod task;
 
 /// A central place for initialization routines.
 pub fn init() {
