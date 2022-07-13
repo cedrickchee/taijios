@@ -9,7 +9,7 @@ extern crate alloc;
 use core::panic::PanicInfo;
 use bootloader::{ BootInfo, entry_point };
 use alloc::{ boxed::Box, vec, vec::Vec, rc::Rc };
-use tiny_os::{println, print, Testable};
+use tiny_os::{ println, print };
 use tiny_os::task::{ Task, simple_executor::SimpleExecutor };
 
 // To make sure that the entry point function has always the correct signature
