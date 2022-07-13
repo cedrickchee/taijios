@@ -20,6 +20,26 @@ linked_list_allocator = "0.9.0"
 version = "1.0"
 features = ["spin_no_std"] # we need this feature since we don’t link the standard library.
 
+# A simple implementation of queue could be a mutex-protected `VecDeque`.
+# However, using mutexes in interrupt handlers is not a good idea since it can
+# easily lead to deadlocks.
+# 
+# To prevent these problems, we need a queue implementation that does not
+# require mutexes or allocations for its `push` operation. Such queues can be
+# implemented by using lock-free atomic operations for pushing and popping
+# elements.
+# 
+# Implementing such a queue in a correct and efficient way is very difficult, so
+# we recommend to stick to existing, well-tested implementations. One popular
+# Rust project that implements various mutex-free types for concurrent
+# programming is `crossbeam`. It provides a type named `ArrayQueue` that is
+# exactly what we need in this case. And we're lucky: The type is fully
+# compatible to `no_std` crates with allocation support.
+[dependencies.crossbeam-queue]
+version = "0.2.1"
+default-features = false
+features = ["alloc"]
+
 # Enable QEMU special `isa-debug-exit` device, which provides an easy way to
 # exit QEMU from the guest system.
 # 
