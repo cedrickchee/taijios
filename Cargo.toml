@@ -46,6 +46,19 @@ features = ["alloc"]
 version = "0.2.0"
 default-features = false
 
+# This crate contains the `Stream` type.
+# 
+# We disable the default features to make the crate `no_std` compatible and
+# enable the `alloc` feature to make its allocation-based types available.
+# 
+# Note that we could also add a dependency on the main `futures` crate, which
+# re-exports the `futures-util` crate, but this would result in a larger number
+# of dependencies and longer compile times.
+[dependencies.futures-util]
+version = "0.3.4"
+default-features = false
+features = ["alloc"]
+
 # Enable QEMU special `isa-debug-exit` device, which provides an easy way to
 # exit QEMU from the guest system.
 # 
