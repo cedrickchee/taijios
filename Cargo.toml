@@ -40,6 +40,12 @@ version = "0.2.1"
 default-features = false
 features = ["alloc"]
 
+# This crate provides a set of synchronized initialization primitives, which are
+# primarily useful for lazy and one-time initialization of static variables.
+[dependencies.conquer-once]
+version = "0.2.0"
+default-features = false
+
 # Enable QEMU special `isa-debug-exit` device, which provides an easy way to
 # exit QEMU from the guest system.
 # 
