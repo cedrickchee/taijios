@@ -175,24 +175,7 @@ extern "x86-interrupt" fn timer_interrupt_handler(
 extern "x86-interrupt" fn keyboard_interrupt_handler(
     _stack_frame: InterruptStackFrame)
 {
-    use pc_keyboard::{ layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1 };
-    use spin::Mutex;
     use x86_64::instructions::port::Port;
-
-    lazy_static! {
-        /// Initialize the `Keyboard` with an US keyboard layout and the
-        /// scancode set 1. The `HandleControl` parameter allows to map
-        /// `ctrl+[a-z]` to the Unicode characters `U+0001` through `U+001A`. We
-        /// don’t want to do that, so we use the `Ignore` option to handle the
-        /// ctrl like normal keys.
-        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> =
-            Mutex::new(Keyboard::new(layouts::Us104Key, ScancodeSet1,
-                HandleControl::Ignore)
-            );
-    }
-
-    // On each interrupt, we lock the `Mutex`.
-    let mut keyboard = KEYBOARD.lock();
 
     // Read the scancode from the keyboard controller.
     // 
@@ -203,22 +186,9 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(
     // Read a byte from the keyboard's data port. This byte is called the
     // scancode and is a number that represents the key press/release.
     let scancode: u8 = unsafe { port.read() };
-    
-    // Translate the scancodes to keys.
-    //
-    // Pass the scancode to the `add_byte` method, which translates the scancode
-    // into an `Option<KeyEvent>`. The `KeyEvent` contains which key caused the
-    // event and whether it was a press or release event.
-    if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
-        // To interpret this key event, we pass it to the `process_keyevent`
-        // method, which translates the key event to a character if possible.
-        if let Some(key) = keyboard.process_keyevent(key_event) {
-            match key {
-                DecodedKey::Unicode(character) => print!("{}", character),
-                DecodedKey::RawKey(key) => print!("{:?}", key),
-            }
-        }
-    }
+
+    // Replaced the keyboard handling code in this handler.
+    crate::task::keyboard::add_scancode(scancode);
 
     unsafe {
         PICS.lock()

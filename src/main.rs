@@ -10,7 +10,7 @@ use core::panic::PanicInfo;
 use bootloader::{ BootInfo, entry_point };
 use alloc::{ boxed::Box, vec, vec::Vec, rc::Rc };
 use tiny_os::{ println, print };
-use tiny_os::task::{ Task, simple_executor::SimpleExecutor };
+use tiny_os::task::{ Task, simple_executor::SimpleExecutor, keyboard };
 
 // To make sure that the entry point function has always the correct signature
 // that the bootloader expects, the `bootloader` crate provides an `entry_point`
@@ -209,6 +209,11 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // it, and then add the task to the `task_queue` of the executor through the
     // `spawn` method.
     executor.spawn(Task::new(example_task()));
+
+    // Add the `print_keypresses` task to our executor to get working keyboard
+    // input.
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+
     // Start the execution of the single task in the queue.
     // 
     // Since the `example_task` does not wait for anything, it can directly run

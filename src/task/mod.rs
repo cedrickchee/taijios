@@ -8,6 +8,7 @@ use core::{
 use alloc::boxed::Box;
 
 pub mod simple_executor;
+pub mod keyboard;
 
 // A newtype wrapper around a pinned, heap allocated, and dynamically dispatched
 // future with the empty type `()` as output.
