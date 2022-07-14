@@ -85,6 +85,7 @@ impl Executor {
         // return type to mark the function as diverging to the compiler.
         loop {
             self.run_ready_tasks();
+            self.sleep_if_idle();
         }
     }
 
@@ -150,6 +151,40 @@ impl Executor {
                 }
                 Poll::Pending => {}
             }
+        }
+    }
+
+    // When using this executor, the CPU utilization of QEMU did not get any
+    // better. The reason for this is that we still keep the CPU busy for the
+    // whole time. We no longer poll tasks until they are woken again, but we
+    // still check the `task_queue` in a busy loop. To fix this, we need to put
+    // the CPU to sleep if there is no more work to do.
+    fn sleep_if_idle(&self) {
+        // ********** Sidenote **********
+        //
+        // The basic idea is to execute the [`hlt` instruction] when the
+        // `task_queue` is empty. This instruction puts the CPU to sleep until
+        // the next interrupt arrives. The fact that the CPU immediately becomes
+        // active again on interrupts ensures that we can still directly react
+        // when an interrupt handler pushes to the `task_queue`.
+        // 
+        // [`hlt` instruction]:
+        //     https://en.wikipedia.org/wiki/HLT_(x86_instruction)
+
+        // Since we call `sleep_if_idle` directly after `run_ready_tasks`, which
+        // loops until the `task_queue` becomes empty, checking the queue again
+        // might seem unnecessary. However, a hardware interrupt might occur
+        // directly after `run_ready_tasks` returns, so there might be a new
+        // task in the queue at the time the `sleep_if_idle` function is called.
+        // Only if the queue is still empty, we put the CPU to sleep by
+        // executing the `hlt` instruction through the [`instructions::hlt`]
+        // wrapper function provided by the [`x86_64`] crate.
+        // 
+        // [`instructions::hlt`]:
+        //     https://docs.rs/x86_64/0.14.2/x86_64/instructions/fn.hlt.html
+        // [`x86_64`]: https://docs.rs/x86_64/0.14.2/x86_64/index.html
+        if self.task_queue.is_empty() {
+            x86_64::instructions::hlt();
         }
     }
 }
