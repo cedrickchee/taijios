@@ -305,3 +305,39 @@ impl Wake for TaskWaker {
 // 
 // [`enable_and_hlt`]:
 //     https://docs.rs/x86_64/0.14.2/x86_64/instructions/interrupts/fn.enable_and_hlt.html
+//
+// ## Possible Extensions
+//
+// Our executor is now able to run tasks in an efficient way. It utilizes waker
+// notifications to avoid polling waiting tasks and puts the CPU to sleep when
+// there is currently no work to do. However, our executor is still quite basic
+// and there are many possible ways to extend its functionality:
+// 
+// - **Scheduling**: We currently use the [`VecDeque`] type to implement a
+//   _first in first out_ (FIFO) strategy for our `task_queue`, which is often
+//   also called _round robin_ scheduling. This strategy might not be the most
+//   efficient for all workloads. For example, it might make sense to prioritize
+//   latency-critical tasks or tasks that do a lot of I/O. See the [scheduling
+//   chapter] of the [_Operating Systems: Three Easy Pieces_] book or the
+//   [Wikipedia article on scheduling][scheduling-wiki] for more information.
+// - **Task Spawning**: Our `Executor::spawn` method currently requires a `&mut
+//   self` reference and is thus no longer available after starting the `run`
+//   method. To fix this, we could create an additional `Spawner` type that
+//   shares some kind of queue with the executor and allows task creation from
+//   within tasks themselves. The queue could be for example the `task_queue`
+//   directly or a separate queue that the executor checks in its run loop.
+// - **Utilizing Threads**: We don't have support for threads yet, but we will
+//   add it later. This will make it possible to launch multiple instances of
+//   the executor in different threads. The advantage of this approach is that
+//   the delay imposed by long running tasks can be reduced because other tasks
+//   can run concurrently. This approach also allows it to utilize multiple CPU
+//   cores.
+// - **Load Balancing**: When adding threading support, it becomes important how
+//   to distribute the tasks between the executors to ensure that all CPU cores
+//   are utilized. A common technique for this is [_work stealing_].
+// 
+// [scheduling chapter]: http://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched.pdf
+// [_Operating Systems: Three Easy Pieces_]:
+//     http://pages.cs.wisc.edu/~remzi/OSTEP/
+// [scheduling-wiki]: https://en.wikipedia.org/wiki/Scheduling_(computing)
+// [_work stealing_]: https://en.wikipedia.org/wiki/Work_stealing
