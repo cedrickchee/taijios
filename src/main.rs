@@ -10,7 +10,7 @@ use core::panic::PanicInfo;
 use bootloader::{ BootInfo, entry_point };
 use alloc::{ boxed::Box, vec, vec::Vec, rc::Rc };
 use tiny_os::{ println, print };
-use tiny_os::task::{ Task, simple_executor::SimpleExecutor, keyboard };
+use tiny_os::task::{ Task, executor::Executor, keyboard };
 
 // To make sure that the entry point function has always the correct signature
 // that the bootloader expects, the `bootloader` crate provides an `entry_point`
@@ -197,13 +197,23 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // unsafe { *ptr = 42; }
     // println!("write worked");
 
+    // Call the renamed test framework entry function.
+    #[cfg(test)] // use conditional compilation to add the call to `test_main` only in test contexts.
+    test_main();
+
+    println!("It did not crash!");
+    
+    
     // Cooperative multitasking based on futures and async/await in Rust.
 
     // An example of running the task returned by the `example_task` function.
-
-    // A new instance of our `SimpleExecutor` type is created with an empty
+    
+    // A new instance of our `Executor` type is created with an empty
     // `task_queue`.
-    let mut executor = SimpleExecutor::new();
+    let mut executor = Executor::new();
+    // Uncomment lines below to use the simple executor.
+    // let mut executor = SimpleExecutor::new();
+
     // Call the asynchronous `example_task` function, which returns a future. We
     // wrap this future in the `Task` type, which moves it to the heap and pins
     // it, and then add the task to the `task_queue` of the executor through the
@@ -225,12 +235,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // execution of our `kernel_main` function continues.
     executor.run();
 
-    // Call the renamed test framework entry function.
-    #[cfg(test)] // use conditional compilation to add the call to `test_main` only in test contexts.
-    test_main();
-
-    println!("It did not crash!");
-    tiny_os::hlt_loop(); // use this `hlt_loop` instead of the endless loops
+    // Since the  `Executor.run` function is marked as diverging, the compiler knows that it
+    // never returns so that we no longer need a call to `hlt_loop`
+    // tiny_os::hlt_loop(); // use this `hlt_loop` instead of the endless loops
 }
 
 /// This function is called on panic.
