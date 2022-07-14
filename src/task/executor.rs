@@ -183,8 +183,26 @@ impl Executor {
         // [`instructions::hlt`]:
         //     https://docs.rs/x86_64/0.14.2/x86_64/instructions/fn.hlt.html
         // [`x86_64`]: https://docs.rs/x86_64/0.14.2/x86_64/index.html
+        use x86_64::instructions::interrupts::{ self, enable_and_hlt };
+
+        // To avoid race conditions, we disable interrupts before checking
+        // whether the `task_queue` is empty.
+        interrupts::disable();
         if self.task_queue.is_empty() {
-            x86_64::instructions::hlt();
+            // <--- interrupt can happen here How do we prevent it?
+            // 
+            // The answer is to disable interrupts on the CPU before the check
+            // and atomically enable them again together with the `hlt`
+            // instruction. This way, all interrupts that happen in between are
+            // delayed after the `hlt` instruction so that no wake-ups are
+            // missed. `interrupts::enable_and_hlt` implement this approach.
+            enable_and_hlt(); // enable interrupts and put the CPU to sleep as a single atomic operation.
+        } else {
+            // In case the queue is no longer empty, it means that an interrupt
+            // woke a task after `run_ready_tasks` returned. In that case, we
+            // enable interrupts again and directly continue execution without
+            // executing `hlt`.
+            interrupts::enable();
         }
     }
 }
@@ -256,3 +274,34 @@ impl Wake for TaskWaker {
         self.wake_task();
     }
 }
+
+// ********** Sidenote **********
+//
+// ## Sleep CPU if idle
+//
+// Unfortunately, there is still a subtle race condition in the previous
+// implementation. Since interrupts are asynchronous and can happen at any time,
+// it is possible that an interrupt happens right between the `is_empty` check
+// and the call to `hlt`:
+// 
+// ```rust
+// if self.task_queue.is_empty() {
+//    /// <--- interrupt can happen here
+//    x86_64::instructions::hlt();
+// }
+// ```
+//
+// In case this interrupt pushes to the `task_queue`, we put the CPU to sleep
+// even though there is now a ready task. In the worst case, this could delay
+// the handling of a keyboard interrupt until the next keypress or the next
+// timer interrupt. So how do we prevent it?
+//
+// The answer is to disable interrupts on the CPU before the check and
+// atomically enable them again together with the `hlt` instruction. This way,
+// all interrupts that happen in between are delayed after the `hlt` instruction
+// so that no wake-ups are missed. To implement this approach, we can use the
+// [`interrupts::enable_and_hlt`][`enable_and_hlt`] function provided by the
+// [`x86_64`] crate.
+// 
+// [`enable_and_hlt`]:
+//     https://docs.rs/x86_64/0.14.2/x86_64/instructions/interrupts/fn.enable_and_hlt.html
