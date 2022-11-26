@@ -66,7 +66,7 @@ This project implements a [microkernel](microkernel). It's a minimal 64-bit OS
 kernel for x86 architecture.
 
 Currently, the kernel boots without crashing and can print something to the
-screen (as shown in the below screenshot).
+screen (as shown in the below screenshot). Keyboard input is working.
 
 [microkernel]: https://en.wikipedia.org/wiki/Microkernel
 
@@ -84,6 +84,44 @@ unstable. "Here be dragons".
 **About Multitasking**
 
 Cooperative multitasking is working. I'm implementing preemptive multitasking.
+
+## About the Code
+
+The code for each feature lives in a separate git tag. This makes it possible to
+see the intermediate state after each feature.
+
+The latest code is available in the "main" branch.
+
+You can find the tag for each feature by following the link in the feature list
+below.
+
+You can check out a tag in a subdirectory using git:
+
+```sh
+# make sure that the tag exists locally by doing
+$ git fetch --tags
+
+# check out the tag by running
+$ git checkout tags/09-paging-implementation
+```
+
+### Features
+
+A side-effect of this project is that you can follow the tags for each features
+in the following order to see how the kernel evolved:
+
+1. [A Rust executable that does not link the stdlib](https://github.com/cedrickchee/taijios/releases/tag/01-freestanding-rust-binary)
+2. [A minimal Rust kernel](https://github.com/cedrickchee/taijios/releases/tag/02-minimal-rust-kernel)
+3. [Print text to the screen in VGA text buffer](https://github.com/cedrickchee/taijios/releases/tag/03-vga-text-buffer)
+4. [Unit and integration testing](https://github.com/cedrickchee/taijios/releases/tag/04-testing)
+5. [Interrupt: CPU exceptions](https://github.com/cedrickchee/taijios/releases/tag/05-cpu-exceptions)
+6. [Interrupt: Double fault handler](https://github.com/cedrickchee/taijios/releases/tag/06-double-faults)
+7. [Interrupt: Hardware, timer interrupts, keyboard input](https://github.com/cedrickchee/taijios/releases/tag/07-hardware-interrupts)
+8. [Memory: Concept of paging](https://github.com/cedrickchee/taijios/releases/tag/08-paging-introduction)
+9. [Memory: Paging implementation](https://github.com/cedrickchee/taijios/releases/tag/09-paging-implementation)
+10. [Memory: Dynamic memory, implement basic support for heap allocations](https://github.com/cedrickchee/taijios/releases/tag/10-heap-allocation)
+11. [Memory: Implement heap allocators from scratch](https://github.com/cedrickchee/taijios/releases/tag/11-allocator-designs)
+12. [Cooperative multitasking: Task, create a simple executor](https://github.com/cedrickchee/taijios/releases/tag/12-multitasking-async-await)
 
 ## Building
 
@@ -316,12 +354,25 @@ To run the unit and integration tests, execute `cargo test`.
 
 ## TODO
 
+Now:
+
 - [ ] Preemptive multitasking
+  - [ ] Threads (a common form of preemptive multitasking)
+  - [ ] Utilize multiple CPU cores
+  - [ ] Processes and multiprocesses
 - [ ] Heap allocators - Bump allocator (now). Explore arena allocator. (there is
   no "best" allocator design that fits all cases)
-- [ ] Threads, processes, and multiprocesses
-- [ ] Program
-- [ ] Shell
+- We are able to interact with our kernel and have some fundamental building
+  blocks for creating a:
+  - [ ] Tiny shell
+  - [ ] Simple programs
+- [ ] Improve I/O
+- [ ] File system
+
+Future:
+- [ ] Re-implement boot loader from scratch
+- [ ] ARM port
+- [ ] RISC-V port
 
 ## Readings
 
@@ -381,14 +432,22 @@ that I would like to thank them:
   <summary>Blog Posts, Articles, Presentations, and Papers</summary>
 
 - [Is It Time to Rewrite the Operating System in Rust?](https://www.infoq.com/presentations/os-rust/) - A presentation  (by Bryan Cantrill at QCon
+- [CS-537: Introduction to Operating Systems](https://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018) class by Remzi H. (UW-Madison)
 - [Learning to build an Operating System in Rust via CS140e](https://downey.io/blog/cs140e-writing-an-operating-system-in-rust/)
 - Alex Light's [Reenix: Implementing a Unix-Like Operating System in Rust](https://scialex.github.io/reenix.pdf) paper (Brown University, Dept of ComSci)
 - [BlogOS](https://os.phil-opp.com)
 - [Bare Metal Rust: Building kernels in Rust](http://www.randomhacks.net/bare-metal-rust/)
+- [Rust-OS Kernel - To userspace and back!](https://nfil.dev/kernel/rust/coding/rust-kernel-to-userspace-and-back/)
+  - I refer to this post for my preemptive multitasking implementation:
+    - Context switching, syscall
+    - Writing a simple, round-robin task scheduler so that we can run multiple processes at once
 - [The development of OxidizedOS](https://ryan-jacobs1.github.io/)
   - Threads and context switching
   - Writing a cooperative schedule
 - [Getting to know Rust by building an OS](https://github.com/rbgrouleff/daft)
+- [Redox](https://www.redox-os.org/) - a Unix-like OS written in Rust, aiming to
+  bring the innovations of Rust to a modern microkernel and full set of apps.
+- [RISC-V OS using Rust](https://osblog.stephenmarz.com/)
 
 </details>
 
@@ -409,6 +468,12 @@ that I would like to thank them:
 <details>
   <summary>Uncategorized</summary>
 
+- [OSDev Wiki](https://wiki.osdev.org/Main_Page)
+  - [Xv6](https://wiki.osdev.org/Xv6)
+    - [Xv6 Homepage](https://pdos.csail.mit.edu/6.828/2018/xv6.html) - Xv6, a simple Unix-like teaching OS
+      - [Xv6 code](https://github.com/mit-pdos/xv6-public) - Kernel hacking in Xv6
+    - [Commentary book on Xv6](https://pdos.csail.mit.edu/6.828/2018/xv6/book-rev10.pdf) in PDF, it is brief (less than 100 pages) and an easy reading
+  - [Brendan's Multi-tasking Tutorial](https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial)
 - [VSCode, GDB, and Debugging an OS](https://austinhanson.com/vscode-gdb-and-debugging-an-os/)
 - [High Assurance Rust: Developing Secure and Robust Software](https://highassurance.rs/chp3/modules.html) - The module system
 
