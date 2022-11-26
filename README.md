@@ -316,12 +316,12 @@ To run the unit and integration tests, execute `cargo test`.
 
 ## TODO
 
-- [] Preemptive multitasking
-- [] Heap allocators - Bump allocator (now). Explore arena allocator. (there is
+- [ ] Preemptive multitasking
+- [ ] Heap allocators - Bump allocator (now). Explore arena allocator. (there is
   no "best" allocator design that fits all cases)
-- [] Threads, processes, and multiprocesses
-- [] Program
-- [] Shell
+- [ ] Threads, processes, and multiprocesses
+- [ ] Program
+- [ ] Shell
 
 ## Readings
 
