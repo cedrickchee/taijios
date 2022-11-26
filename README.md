@@ -1,14 +1,15 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/Louis3797/awesome-readme-template/main/assets/logo.png" alt="screenshot" width="200" height="auto" />
-  <h1>Tiny OS</h1>
+  <img src="https://raw.githubusercontent.com/cedrickchee/taijios/main/docs/assets/logo.png" alt="screenshot" width="200" height="auto" />
+  <h1>TaijiOS</h1>
   
   <p>
-    A tiny OS develop in Rust for learning systems programming and OSdev.
+    TaijiOS is a hobby operating system written from scratch in Rust for learning systems programming and OSdev.
   </p>
   
   
 <!-- Badges -->
+<!--
 <p>
   <a href="https://github.com/cedrickchee/tiny-os/graphs/contributors">
     <img src="https://img.shields.io/github/contributors/cedrickchee/tiny-os" alt="contributors" />
@@ -39,6 +40,7 @@
   <span> · </span>
     <a href="https://github.com/cedrickchee/tiny-os/issues/">Request Feature</a>
   </h4>
+-->
 </div>
 
 <br />
@@ -48,27 +50,40 @@
 
 - [About the Project](#about-the-project)
   * [Screenshots](#screenshots)
-  * [Features](#features)
+  * [Status](#status)
 - [Building](#building)
 - [Creating a Bootimage](#creating-a-bootimage)
 - [Running](#running)
 - [Testing](#testing)
-- [License](#license)
+- [TODO](#todo)
+- [Readings](#readings)
 - [Acknowledgements](#acknowledgements)
+- [License](#license)
 
-<!-- About the Project -->
 ## About the Project
 
-This repository contains the source code for the [A Freestanding Rust Binary][post] post of the [Writing an OS in Rust](https://os.phil-opp.com) series.
+This project implements a [microkernel](microkernel). It's a minimal 64-bit OS
+kernel for x86 architecture.
 
-[post]: https://os.phil-opp.com/freestanding-rust-binary/
+Currently, the kernel boots without crashing and can print something to the
+screen (as shown in the below screenshot).
 
-<!-- Screenshots -->
+[microkernel]: https://en.wikipedia.org/wiki/Microkernel
+
 ### Screenshots
 
 <div align="center">
   <img src="docs/assets/qemu-boot-screen.png" width="600" height="auto" alt="screenshot" />
 </div>
+
+### Status
+
+This repository contains my **Work-In-Progress (WIP)** code. Things are still
+unstable. "Here be dragons".
+
+**About Multitasking**
+
+Cooperative multitasking is working. I'm implementing preemptive multitasking.
 
 ## Building
 
@@ -171,7 +186,7 @@ $ cargo build
 ```
 
 <details>
-  <summary>Linker Errors</summary>
+  <summary>If you encountered linker errors</summary>
 The linker is a program that combines the generated code into an executable.
 Since the executable format differs between Linux, Windows, and macOS, each
 system has its own linker that throws a different error. The fundamental cause
@@ -298,3 +313,107 @@ correct device name, because everything on that device is overwritten.
 ## Testing
 
 To run the unit and integration tests, execute `cargo test`.
+
+## TODO
+
+- [] Preemptive multitasking
+- [] Heap allocators - Bump allocator (now). Explore arena allocator. (there is
+  no "best" allocator design that fits all cases)
+- [] Threads, processes, and multiprocesses
+- [] Program
+- [] Shell
+
+## Readings
+
+I planned to read these articles or blog posts and do some literature review
+along the way.
+
+- The Global Descriptor Table (GDT)
+
+  GDT is a relict that was used for memory segmentation before paging became the
+  de facto standard. It is still needed in 64-bit mode for various things such
+  as kernel/user mode configuration or TSS loading.
+
+  For more information about segmentation check out the equally named chapter of
+  the free [OS "Three Easy Pieces" (OSTEP) book](http://pages.cs.wisc.edu/%7Eremzi/OSTEP/).
+
+- The x86-interrupt calling convention
+
+  A powerful abstraction that hides almost all of the messy details of the
+  exception handling process.
+
+- The breakpoint exception is commonly used in debuggers: When the user sets a
+  breakpoint, the debugger overwrites the corresponding instruction with the
+  int3 instruction so that the CPU throws the breakpoint exception when it
+  reaches that line.
+
+  For more details, see the ["How debuggers work"](https://eli.thegreenplace.net/2011/01/27/how-debuggers-work-part-2-breakpoints)
+
+- Configuring the Timer
+
+  The hardware timer that we use is called the _Programmable Interval Timer_
+  or PIT for short. The OSDev wiki has an extensive article about the
+  [configuring the PIT](https://wiki.osdev.org/Programmable_Interval_Timer).
+
+- Memory management
+
+  Important topics to read again: Segmentation, Virtual Memory, Fragmentation,
+  Paging, Hidden Fragmentation, Page Tables, and Multilevel Page Tables.
+
+  The fragmentation problem is one of the reasons that segmentation is no
+  longer used by most systems. In fact, segmentation is not even supported in
+  64-bit mode on x86 anymore. Instead _paging_ is used, which completely
+  avoids the fragmentation problem.
+
+- Fixed-size block allocator
+
+  Allocators used in OS kernels are typically highly optimized to the specific
+  workload of the kernel.
+
+  For more info, check out ["The Linux kernel memory allocators"](https://argp.github.io/2012/01/03/linux-kernel-heap-exploitation/).
+
+## Acknowledgements
+
+Many work have indirectly contributed to this project. Here are some of the work
+that I would like to thank them:
+
+<details>
+  <summary>Blog Posts, Articles, Presentations, and Papers</summary>
+
+- [Is It Time to Rewrite the Operating System in Rust?](https://www.infoq.com/presentations/os-rust/) - A presentation  (by Bryan Cantrill at QCon
+- [Learning to build an Operating System in Rust via CS140e](https://downey.io/blog/cs140e-writing-an-operating-system-in-rust/)
+- Alex Light's [Reenix: Implementing a Unix-Like Operating System in Rust](https://scialex.github.io/reenix.pdf) paper (Brown University, Dept of ComSci)
+- [BlogOS](https://os.phil-opp.com)
+- [Bare Metal Rust: Building kernels in Rust](http://www.randomhacks.net/bare-metal-rust/)
+- [The development of OxidizedOS](https://ryan-jacobs1.github.io/)
+  - Threads and context switching
+  - Writing a cooperative schedule
+- [Getting to know Rust by building an OS](https://github.com/rbgrouleff/daft)
+
+</details>
+
+<details>
+  <summary>Hobby OSes</summary>
+
+- [MOROS](https://github.com/vinc/moros) - Obscure Rust Operating System.
+- [r3](https://github.com/Narasimha1997/r3) - A tiny multi-tasking hobby operating system kernel written in Rust.
+- [litchi-rs](https://github.com/BugenZhao/litchi-rs) - An x86-64 kernel with ~100% Rust (originally) in a week.
+- [A toy OS in Rust](https://github.com/emk/toyos-rs)
+- [juner_os](https://github.com/zzhgithub/juner_os) - This project combines elements from both blog_os and mal.
+  - [rCore](https://github.com/rcore-os/rCore) - Rust version of THU uCore OS Plus.
+- [LibertyOS's THANKYOU](https://github.com/LibertyOS-Development/kernel/blob/main/THANKYOU.md)
+- [QuiltOS](https://github.com/QuiltOS/QuiltOS) - A language-based OS to run Rust on bare metal. A fork of RustOS.
+
+</details>
+
+<details>
+  <summary>Uncategorized</summary>
+
+- [VSCode, GDB, and Debugging an OS](https://austinhanson.com/vscode-gdb-and-debugging-an-os/)
+- [High Assurance Rust: Developing Secure and Robust Software](https://highassurance.rs/chp3/modules.html) - The module system
+
+</details>
+
+## License
+
+This project is licensed under [MIT license](./LICENSE).
