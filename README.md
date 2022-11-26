@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/cedrickchee/taijios/main/docs/assets/logo.png" alt="screenshot" width="200" height="auto" />
+  <img src="https://raw.githubusercontent.com/cedrickchee/taijios/main/docs/assets/logo.png?token=GHSAT0AAAAAABO5A33CROYJHB6U3ZQBSRTWY4BYJ5A" alt="screenshot" width="200" height="auto" />
   <h1>TaijiOS</h1>
   
   <p>
