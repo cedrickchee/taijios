@@ -49,7 +49,7 @@
 # Table of Contents
 
 - [About the Project](#about-the-project)
-  * [Screenshots](#screenshots)
+  * [Demo](#demo)
   * [Status](#status)
 - [Building](#building)
 - [Creating a Bootimage](#creating-a-bootimage)
@@ -70,11 +70,15 @@ screen (as shown in the below screenshot). Keyboard input is working.
 
 [microkernel]: https://en.wikipedia.org/wiki/Microkernel
 
-### Screenshots
+### Demo
 
+https://user-images.githubusercontent.com/145605/204237803-46bd5d8d-eadd-438a-b9f2-5af92c6ccad5.mp4
+
+<!--
 <div align="center">
   <img src="docs/assets/qemu-boot-screen.png" width="600" height="auto" alt="screenshot" />
 </div>
+-->
 
 ### Status
 
