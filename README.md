@@ -66,7 +66,7 @@ This project implements a [microkernel](microkernel). It's a minimal 64-bit OS
 kernel for x86 architecture.
 
 Currently, the kernel boots without crashing and can print something to the
-screen (as shown in the below screenshot). Keyboard input is working.
+screen. Keyboard input is working. (see a demo below)
 
 [microkernel]: https://en.wikipedia.org/wiki/Microkernel
 
